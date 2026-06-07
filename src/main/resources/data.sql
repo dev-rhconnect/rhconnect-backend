@@ -1,4 +1,7 @@
--- Compte Admin IT — Mame Coumba SALL
+-- Suppression du compte admin@ism.sn s'il existe (mauvais domaine, compte test)
+DELETE FROM utilisateurs WHERE email = 'admin@ism.sn';
+
+-- Compte Admin IT — Mame Coumba SALL (unique)
 -- Email : mame-coumba.sall@ism.edu.sn
 -- Mot de passe : Admin@ISM2026
 INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, role, actif, premier_connexion, date_creation)

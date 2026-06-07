@@ -8,5 +8,6 @@ import java.util.Optional;
 public interface VacataireRepository extends JpaRepository<Vacataire, Long> {
     Optional<Vacataire> findByUtilisateurId(Long utilisateurId);
     List<Vacataire> findByStatut(Vacataire.StatutVacataire statut);
+    long countByStatut(Vacataire.StatutVacataire statut);
     boolean existsByUtilisateurEmail(String email);
 }

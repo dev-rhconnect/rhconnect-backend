@@ -10,6 +10,7 @@ import java.util.Optional;
 
 public interface ContratRepository extends JpaRepository<Contrat, Long> {
     List<Contrat> findByVacataireId(Long vacataireId);
+    List<Contrat> findByStatut(Contrat.StatutContrat statut);
     Optional<Contrat> findByVacataireIdAndStatut(Long vacataireId, Contrat.StatutContrat statut);
     boolean existsByVacataireIdAndStatut(Long vacataireId, Contrat.StatutContrat statut);
 

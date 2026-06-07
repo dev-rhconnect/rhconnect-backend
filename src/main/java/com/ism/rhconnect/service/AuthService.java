@@ -1,5 +1,6 @@
 package com.ism.rhconnect.service;
 
+import com.ism.rhconnect.dto.request.ChangePasswordRequest;
 import com.ism.rhconnect.dto.request.LoginRequest;
 import com.ism.rhconnect.dto.response.AuthResponse;
 import com.ism.rhconnect.entity.Utilisateur;
@@ -10,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +22,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final UtilisateurRepository utilisateurRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public AuthResponse login(LoginRequest request) {
         try {
@@ -54,5 +58,16 @@ public class AuthService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException("Utilisateur introuvable"));
+    }
+
+    @Transactional
+    public void changerMotDePasse(ChangePasswordRequest request) {
+        Utilisateur user = getCurrentUser();
+        if (!passwordEncoder.matches(request.getAncienMotDePasse(), user.getMotDePasse())) {
+            throw new UnauthorizedException("Ancien mot de passe incorrect");
+        }
+        user.setMotDePasse(passwordEncoder.encode(request.getNouveauMotDePasse()));
+        user.setPremierConnexion(false);
+        utilisateurRepository.save(user);
     }
 }
