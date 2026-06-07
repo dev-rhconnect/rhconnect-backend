@@ -32,6 +32,7 @@ public class Utilisateur {
     @Column(nullable = false)
     private boolean actif = true;
 
+    @Builder.Default
     private boolean premierConnexion = true;
 
     @Column(updatable = false)

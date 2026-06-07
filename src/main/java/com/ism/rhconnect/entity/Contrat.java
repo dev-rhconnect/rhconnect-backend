@@ -38,6 +38,7 @@ public class Contrat {
 
     private String cheminPdf;
 
+    @Builder.Default
     private boolean estAvenant = false;
 
     @ManyToOne
