@@ -1,0 +1,328 @@
+{
+  "info": {
+    "name": "RHConnect API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080/api" },
+    { "key": "token",    "value": "" }
+  ],
+  "item": [
+
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "var json = pm.response.json();",
+                "if (json.token) {",
+                "  pm.collectionVariables.set('token', json.token);",
+                "  console.log('Token sauvegardé automatiquement');",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mame-coumba.sall@ism.edu.sn\",\n  \"motDePasse\": \"Admin@ISM2026\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Changer mot de passe (premier connexion)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/auth/change-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ancienMotDePasse\": \"Rhconnect@ISM2026\",\n  \"nouveauMotDePasse\": \"NouveauMdp@2026\"\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Admin IT",
+      "item": [
+        {
+          "name": "Lister utilisateurs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/admin/utilisateurs"
+          }
+        },
+        {
+          "name": "Créer compte",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/admin/utilisateurs",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prenom\": \"Prénom\",\n  \"nom\": \"NOM\",\n  \"email\": \"prenom.nom@ism.edu.sn\",\n  \"role\": \"RESPONSABLE_PROGRAMME\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Activer compte",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/admin/utilisateurs/1/activer"
+          }
+        },
+        {
+          "name": "Désactiver compte",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/admin/utilisateurs/1/desactiver"
+          }
+        },
+        {
+          "name": "Changer rôle",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/admin/utilisateurs/1/role?role=ATTACHE_CLASSE",
+              "query": [{ "key": "role", "value": "ATTACHE_CLASSE" }]
+            }
+          }
+        },
+        {
+          "name": "Logs d'audit",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/admin/logs"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Vacataires",
+      "item": [
+        {
+          "name": "Lister vacataires",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/vacataires"
+          }
+        },
+        {
+          "name": "Créer vacataire",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/vacataires",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prenom\": \"Fatou\",\n  \"nom\": \"DIALLO\",\n  \"email\": \"fatou.diallo@gmail.com\",\n  \"telephone\": \"77 000 00 00\",\n  \"specialite\": \"Informatique\",\n  \"tauxHoraire\": 10000\n}"
+            }
+          }
+        },
+        {
+          "name": "Détail vacataire",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/vacataires/1"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Contrats",
+      "item": [
+        {
+          "name": "Créer contrat",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/contrats",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vacataireId\": 1,\n  \"module\": \"Algorithmique\",\n  \"classe\": \"L3IAGEA\",\n  \"volumeHoraire\": 30,\n  \"tauxHoraire\": 10000,\n  \"dateDebut\": \"2026-01-15\",\n  \"dateFin\": \"2026-05-30\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Détail contrat",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/contrats/1"
+          }
+        },
+        {
+          "name": "Télécharger contrat PDF",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/contrats/1/pdf"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Interventions (Planning)",
+      "item": [
+        {
+          "name": "Lister interventions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/interventions"
+          }
+        },
+        {
+          "name": "Créer intervention",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/interventions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contratId\": 1,\n  \"dateSeance\": \"2026-02-10\",\n  \"heureDebut\": \"08:00\",\n  \"heureFin\": \"10:00\",\n  \"duree\": 2\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Relevés d'heures",
+      "item": [
+        {
+          "name": "Lister relevés",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/releves"
+          }
+        },
+        {
+          "name": "Créer relevé",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/releves",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contratId\": 1,\n  \"mois\": \"2026-02\",\n  \"lignes\": [\n    { \"date\": \"2026-02-10\", \"heureDebut\": \"08:00\", \"heureFin\": \"10:00\", \"duree\": 2 },\n    { \"date\": \"2026-02-17\", \"heureDebut\": \"08:00\", \"heureFin\": \"10:00\", \"duree\": 2 }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Soumettre relevé",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/releves/1/soumettre"
+          }
+        },
+        {
+          "name": "Valider relevé",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/releves/1/valider"
+          }
+        },
+        {
+          "name": "Rejeter relevé",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/releves/1/rejeter"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Paiements",
+      "item": [
+        {
+          "name": "Lister paiements",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/paiements"
+          }
+        },
+        {
+          "name": "Télécharger fiche de paie PDF",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/paiements/1/telecharger"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Lister notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/notifications"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Dashboard KPI",
+      "item": [
+        {
+          "name": "KPI général",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/dashboard/kpi"
+          }
+        }
+      ]
+    }
+
+  ]
+}

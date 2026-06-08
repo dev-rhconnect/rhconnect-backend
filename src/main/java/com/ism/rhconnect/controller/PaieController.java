@@ -43,6 +43,13 @@ public class PaieController {
         return ResponseEntity.ok(paieService.trouverParId(id));
     }
 
+    /** Sprint 3 — Vacataire : consulter ses propres fiches de paie. */
+    @GetMapping("/mes-fiches")
+    @PreAuthorize("hasRole('VACATAIRE')")
+    public ResponseEntity<List<PaiementResponse>> mesFiches() {
+        return ResponseEntity.ok(paieService.mesFiches());
+    }
+
     /** Sprint 2 — Ndeye Fatou : Télécharger la fiche de paie PDF et l'envoyer par email. */
     @GetMapping("/{id}/telecharger")
     @PreAuthorize("hasAnyRole('RELAIS_FINANCE', 'ADMIN', 'VACATAIRE')")

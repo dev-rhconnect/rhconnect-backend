@@ -22,4 +22,6 @@ public class LigneHeureRequest {
     private LocalTime heureFin;
 
     private String observation;
+
+    private boolean absence = false;
 }
