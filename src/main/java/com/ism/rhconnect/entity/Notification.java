@@ -45,7 +45,8 @@ public class Notification {
         RELEVE_REJETE,
         FICHE_PAIE_DISPONIBLE,
         ECART_VOLUME_HORAIRE,
-        NOUVEAU_COMPTE
+        NOUVEAU_COMPTE,
+        DEMANDE_EXPLICATION
     }
 
     public enum Canal {

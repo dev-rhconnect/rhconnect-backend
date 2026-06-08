@@ -34,6 +34,7 @@ public class FeuilleHeure {
 
     private LocalDateTime dateSoumission;
     private LocalDateTime dateValidation;
+    private String motifRejet;
 
     @OneToMany(mappedBy = "feuilleHeure", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<LigneHeure> lignes;

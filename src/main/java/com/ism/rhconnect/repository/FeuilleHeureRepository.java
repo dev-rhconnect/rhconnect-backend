@@ -11,4 +11,5 @@ public interface FeuilleHeureRepository extends JpaRepository<FeuilleHeure, Long
     long countByStatut(FeuilleHeure.Statut statut);
     List<FeuilleHeure> findByAttacheId(Long attacheId);
     Optional<FeuilleHeure> findByContratIdAndPeriode(Long contratId, String periode);
+    List<FeuilleHeure> findByContratVacataireUtilisateurIdAndStatut(Long utilisateurId, FeuilleHeure.Statut statut);
 }

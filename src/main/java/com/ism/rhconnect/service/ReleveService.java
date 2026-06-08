@@ -1,17 +1,13 @@
 package com.ism.rhconnect.service;
 
 import com.ism.rhconnect.dto.request.FeuilleHeureRequest;
+import com.ism.rhconnect.dto.request.LigneHeureRequest;
 import com.ism.rhconnect.dto.response.FeuilleHeureResponse;
 import com.ism.rhconnect.dto.response.LigneHeureResponse;
-import com.ism.rhconnect.entity.Contrat;
-import com.ism.rhconnect.entity.FeuilleHeure;
-import com.ism.rhconnect.entity.Notification;
-import com.ism.rhconnect.entity.Utilisateur;
+import com.ism.rhconnect.entity.*;
 import com.ism.rhconnect.exception.ResourceNotFoundException;
 import com.ism.rhconnect.exception.UnauthorizedException;
-import com.ism.rhconnect.repository.ContratRepository;
-import com.ism.rhconnect.repository.FeuilleHeureRepository;
-import com.ism.rhconnect.repository.UtilisateurRepository;
+import com.ism.rhconnect.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -26,11 +22,12 @@ import java.util.stream.Collectors;
 public class ReleveService {
 
     private final FeuilleHeureRepository feuilleHeureRepository;
+    private final LigneHeureRepository ligneHeureRepository;
     private final ContratRepository contratRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final NotificationService notificationService;
 
-    /* ── Sprint 2 : Mouhamad — création d'un nouveau relevé mensuel ── */
+    /* ── Création relevé (en-tête) ── */
 
     @Transactional
     public FeuilleHeureResponse creerFeuille(FeuilleHeureRequest request) {
@@ -59,21 +56,67 @@ public class ReleveService {
         return toResponse(feuilleHeureRepository.save(feuille));
     }
 
-    /* ── Lecture ── */
+    /* ── Sprint 3 : Ajouter une ligne d'heure (séance) ── */
 
-    @Transactional(readOnly = true)
-    public List<FeuilleHeureResponse> listerParAttache(Long attacheId) {
-        return feuilleHeureRepository.findByAttacheId(attacheId)
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    @Transactional
+    public LigneHeureResponse ajouterLigne(Long feuilleId, LigneHeureRequest request) {
+        FeuilleHeure feuille = feuilleHeureRepository.findById(feuilleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Relevé introuvable : " + feuilleId));
+
+        if (feuille.getStatut() != FeuilleHeure.Statut.EN_COURS) {
+            throw new IllegalStateException("Impossible d'ajouter une séance : le relevé est " + feuille.getStatut());
+        }
+
+        double duree = calculerDuree(request);
+
+        LigneHeure ligne = LigneHeure.builder()
+                .feuilleHeure(feuille)
+                .date(request.getDate())
+                .heureDebut(request.getHeureDebut())
+                .heureFin(request.getHeureFin())
+                .duree(duree)
+                .observation(request.isAbsence() ? "ABSENCE" + (request.getObservation() != null ? " — " + request.getObservation() : "") : request.getObservation())
+                .statut(request.isAbsence() ? LigneHeure.Statut.REJETEE : LigneHeure.Statut.SAISIE)
+                .build();
+
+        LigneHeure saved = ligneHeureRepository.save(ligne);
+
+        return LigneHeureResponse.builder()
+                .id(saved.getId())
+                .feuilleHeureId(feuilleId)
+                .date(saved.getDate())
+                .heureDebut(saved.getHeureDebut())
+                .heureFin(saved.getHeureFin())
+                .duree(saved.getDuree())
+                .observation(saved.getObservation())
+                .statut(saved.getStatut())
+                .build();
     }
+
+    /* ── Lecture ── */
 
     @Transactional(readOnly = true)
     public List<FeuilleHeureResponse> mesMesReleves() {
         Utilisateur u = getUtilisateurConnecte();
         return feuilleHeureRepository.findByAttacheId(u.getId())
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    /** Sprint 3 — Vacataire consulte ses relevés validés. */
+    @Transactional(readOnly = true)
+    public List<FeuilleHeureResponse> mesRelevesValides() {
+        Utilisateur vacataire = getUtilisateurConnecte();
+        return feuilleHeureRepository
+                .findByContratVacataireUtilisateurIdAndStatut(vacataire.getId(), FeuilleHeure.Statut.VALIDE)
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    /** Sprint 3 — RP consulte les relevés de son équipe. */
+    @Transactional(readOnly = true)
+    public List<FeuilleHeureResponse> listerEquipeRP() {
+        return feuilleHeureRepository.findAll()
                 .stream()
+                .filter(f -> f.getStatut() != FeuilleHeure.Statut.EN_COURS)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -81,9 +124,7 @@ public class ReleveService {
     @Transactional(readOnly = true)
     public List<FeuilleHeureResponse> listerSoumis() {
         return feuilleHeureRepository.findByStatut(FeuilleHeure.Statut.SOUMIS)
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+                .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -92,7 +133,35 @@ public class ReleveService {
                 .orElseThrow(() -> new ResourceNotFoundException("Relevé introuvable : " + id)));
     }
 
-    /* ── Validation / Rejet ── */
+    /* ── Soumission ── */
+
+    @Transactional
+    public FeuilleHeureResponse soumettre(Long id) {
+        FeuilleHeure feuille = feuilleHeureRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Relevé introuvable : " + id));
+
+        if (feuille.getStatut() != FeuilleHeure.Statut.EN_COURS) {
+            throw new IllegalStateException("Ce relevé ne peut pas être soumis (statut : " + feuille.getStatut() + ")");
+        }
+
+        if (feuille.getLignes() == null || feuille.getLignes().isEmpty()) {
+            throw new IllegalStateException("Impossible de soumettre un relevé sans séances saisies");
+        }
+
+        feuille.setStatut(FeuilleHeure.Statut.SOUMIS);
+        feuille.setDateSoumission(LocalDateTime.now());
+        FeuilleHeure saved = feuilleHeureRepository.save(feuille);
+
+        notificationService.creer(
+                feuille.getAttache(),
+                Notification.Type.RELEVE_SOUMIS,
+                "Votre relevé de " + feuille.getPeriode() + " (" + feuille.getContrat().getModule()
+                        + ") a été soumis. En attente de validation par le Relais Finance.");
+
+        return toResponse(saved);
+    }
+
+    /* ── Sprint 3 : Validation par le Relais Finance ── */
 
     @Transactional
     public FeuilleHeureResponse valider(Long id) {
@@ -103,25 +172,30 @@ public class ReleveService {
             throw new IllegalStateException("Ce relevé doit être soumis avant validation (statut : " + feuille.getStatut() + ")");
         }
 
-        // Calculer le total des heures
         double total = (feuille.getLignes() != null)
-                ? feuille.getLignes().stream().mapToDouble(l -> l.getDuree() != null ? l.getDuree() : 0).sum()
+                ? feuille.getLignes().stream()
+                    .filter(l -> l.getStatut() != LigneHeure.Statut.REJETEE)
+                    .mapToDouble(l -> l.getDuree() != null ? l.getDuree() : 0).sum()
                 : 0;
+
         feuille.setTotalHeuresValidees(total);
         feuille.setStatut(FeuilleHeure.Statut.VALIDE);
         feuille.setDateValidation(LocalDateTime.now());
+        feuille.setMotifRejet(null);
 
         FeuilleHeure saved = feuilleHeureRepository.save(feuille);
 
+        // Notifier l'Attaché
         notificationService.creer(
                 feuille.getAttache(),
                 Notification.Type.RELEVE_VALIDE,
-                "Votre relevé de " + feuille.getPeriode() + " pour le module "
-                        + feuille.getContrat().getModule() + " a été validé. Total : "
-                        + String.format("%.1f h", total));
+                "Votre relevé de " + feuille.getPeriode() + " (" + feuille.getContrat().getModule()
+                        + ") a été validé. Total : " + String.format("%.1f h", total));
 
         return toResponse(saved);
     }
+
+    /* ── Sprint 3 : Rejet par le Relais Finance → demande d'explication au RP ── */
 
     @Transactional
     public FeuilleHeureResponse rejeter(Long id, String motif) {
@@ -133,40 +207,29 @@ public class ReleveService {
         }
 
         feuille.setStatut(FeuilleHeure.Statut.REJETE);
+        feuille.setMotifRejet(motif);
         FeuilleHeure saved = feuilleHeureRepository.save(feuille);
 
         String msgMotif = (motif != null && !motif.isBlank()) ? " Motif : " + motif : "";
+
+        // Notifier l'Attaché
         notificationService.creer(
                 feuille.getAttache(),
                 Notification.Type.RELEVE_REJETE,
-                "Votre relevé de " + feuille.getPeriode() + " pour le module "
-                        + feuille.getContrat().getModule() + " a été rejeté." + msgMotif);
+                "Votre relevé de " + feuille.getPeriode() + " (" + feuille.getContrat().getModule()
+                        + ") a été rejeté." + msgMotif);
 
-        return toResponse(saved);
-    }
-
-    /* ── Soumission ── */
-
-    @Transactional
-    public FeuilleHeureResponse soumettre(Long id) {
-        FeuilleHeure feuille = feuilleHeureRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Relevé introuvable : " + id));
-
-        if (feuille.getStatut() != FeuilleHeure.Statut.EN_COURS) {
-            throw new IllegalStateException(
-                    "Ce relevé ne peut pas être soumis (statut : " + feuille.getStatut() + ")");
+        // Demande d'explication → tous les RP
+        List<Utilisateur> responsables = utilisateurRepository.findByRole(Role.RESPONSABLE_PROGRAMME);
+        for (Utilisateur rp : responsables) {
+            notificationService.creer(
+                    rp,
+                    Notification.Type.DEMANDE_EXPLICATION,
+                    "Le Relais Finance a rejeté le relevé de "
+                            + feuille.getAttache().getPrenom() + " " + feuille.getAttache().getNom()
+                            + " (" + feuille.getPeriode() + " — " + feuille.getContrat().getModule() + ")."
+                            + msgMotif + " Veuillez prendre contact avec l'attaché concerné.");
         }
-
-        feuille.setStatut(FeuilleHeure.Statut.SOUMIS);
-        feuille.setDateSoumission(LocalDateTime.now());
-        FeuilleHeure saved = feuilleHeureRepository.save(feuille);
-
-        // Notifier l'attaché de classe
-        notificationService.creer(
-                feuille.getAttache(),
-                Notification.Type.RELEVE_SOUMIS,
-                "Votre relevé de " + feuille.getPeriode() + " pour le module "
-                        + feuille.getContrat().getModule() + " a été soumis avec succès.");
 
         return toResponse(saved);
     }
@@ -196,11 +259,19 @@ public class ReleveService {
                 .classe(f.getContrat().getClasse())
                 .periode(f.getPeriode())
                 .totalHeuresValidees(f.getTotalHeuresValidees())
+                .volumeHorairePrevisionnel(f.getContrat().getVolumeHorairePrevisionnel())
                 .statut(f.getStatut())
                 .dateSoumission(f.getDateSoumission())
                 .dateValidation(f.getDateValidation())
+                .motifRejet(f.getMotifRejet())
                 .lignes(lignes)
                 .build();
+    }
+
+    private double calculerDuree(LigneHeureRequest req) {
+        if (req.isAbsence()) return 0.0;
+        long minutes = req.getHeureDebut().until(req.getHeureFin(), java.time.temporal.ChronoUnit.MINUTES);
+        return minutes / 60.0;
     }
 
     private Utilisateur getUtilisateurConnecte() {

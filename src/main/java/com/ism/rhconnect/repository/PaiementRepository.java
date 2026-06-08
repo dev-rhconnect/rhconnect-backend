@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     List<Paiement> findByFeuilleHeureContratVacataireId(Long vacataireId);
+    List<Paiement> findByFeuilleHeureContratVacataireUtilisateurId(Long utilisateurId);
     List<Paiement> findByStatut(Paiement.Statut statut);
 
     @Query("SELECT SUM(p.montantNet) FROM Paiement p WHERE p.feuilleHeure.periode = :periode AND p.statut = 'VALIDE'")

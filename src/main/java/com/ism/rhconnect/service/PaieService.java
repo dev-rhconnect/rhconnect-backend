@@ -9,6 +9,7 @@ import com.ism.rhconnect.entity.Utilisateur;
 import com.ism.rhconnect.exception.ResourceNotFoundException;
 import com.ism.rhconnect.repository.FeuilleHeureRepository;
 import com.ism.rhconnect.repository.PaiementRepository;
+import com.ism.rhconnect.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class PaieService {
     private final PdfFichePaieService pdfFichePaieService;
     private final EmailService emailService;
     private final NotificationService notificationService;
+    private final UtilisateurRepository utilisateurRepository;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -81,6 +83,17 @@ public class PaieService {
         return paiementRepository.findAll().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    /** Sprint 3 — Vacataire consulte ses propres fiches de paie. */
+    @Transactional(readOnly = true)
+    public List<PaiementResponse> mesFiches() {
+        String email = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+        Utilisateur u = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable"));
+        return paiementRepository.findByFeuilleHeureContratVacataireUtilisateurId(u.getId())
+                .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
