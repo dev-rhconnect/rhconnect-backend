@@ -14,4 +14,7 @@ VALUES (
     true,
     false,
     NOW()
-) ON CONFLICT (email) DO NOTHING;
+) ON CONFLICT (email) DO UPDATE SET
+    mot_de_passe     = EXCLUDED.mot_de_passe,
+    actif            = EXCLUDED.actif,
+    premier_connexion = EXCLUDED.premier_connexion;
