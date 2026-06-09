@@ -130,6 +130,43 @@ public class PaieService {
         return pdf;
     }
 
+    /* ── Sprint 3 : Export BC365 (CSV par module) ── */
+
+    @Transactional(readOnly = true)
+    public byte[] exporterBC365() {
+        List<Paiement> paiements = paiementRepository.findAll();
+
+        StringBuilder csv = new StringBuilder();
+        csv.append("Module;Classe;Vacataire;Période;Heures;Taux Horaire (FCFA);Montant Brut (FCFA);Retenue 5% (FCFA);Net à Payer (FCFA)\n");
+
+        for (Paiement p : paiements) {
+            FeuilleHeure f = p.getFeuilleHeure();
+            String module  = f.getContrat().getModule();
+            String classe  = f.getContrat().getClasse();
+            String nom     = f.getContrat().getVacataire().getUtilisateur().getPrenom()
+                           + " " + f.getContrat().getVacataire().getUtilisateur().getNom();
+            csv.append(escapeCsv(module)).append(';')
+               .append(escapeCsv(classe)).append(';')
+               .append(escapeCsv(nom)).append(';')
+               .append(escapeCsv(f.getPeriode())).append(';')
+               .append(p.getTotalHeures()).append(';')
+               .append(p.getTauxHoraire()).append(';')
+               .append(String.format("%.2f", p.getMontantBrut())).append(';')
+               .append(String.format("%.2f", p.getRetenueFiscale())).append(';')
+               .append(String.format("%.2f", p.getMontantNet())).append('\n');
+        }
+
+        return csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private String escapeCsv(String value) {
+        if (value == null) return "";
+        if (value.contains(";") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
+    }
+
     /* ── Mapping ── */
 
     private PaiementResponse toResponse(Paiement p) {

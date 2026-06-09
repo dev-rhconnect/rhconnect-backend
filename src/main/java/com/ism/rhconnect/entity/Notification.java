@@ -46,7 +46,8 @@ public class Notification {
         FICHE_PAIE_DISPONIBLE,
         ECART_VOLUME_HORAIRE,
         NOUVEAU_COMPTE,
-        DEMANDE_EXPLICATION
+        DEMANDE_EXPLICATION,
+        REPONSE_EXPLICATION
     }
 
     public enum Canal {
