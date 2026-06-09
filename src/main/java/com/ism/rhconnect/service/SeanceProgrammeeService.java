@@ -47,6 +47,14 @@ public class SeanceProgrammeeService {
         Contrat contrat = contratRepository.findById(request.getContratId())
                 .orElseThrow(() -> new ResourceNotFoundException("Contrat introuvable"));
 
+        // La date doit être dans la période du contrat
+        LocalDate dateSeance = request.getDateSeance();
+        if (dateSeance.isBefore(contrat.getDateDebut()) || dateSeance.isAfter(contrat.getDateFin())) {
+            throw new IllegalArgumentException(
+                "La date " + dateSeance + " est hors de la période du contrat ("
+                + contrat.getDateDebut() + " → " + contrat.getDateFin() + ").");
+        }
+
         double duree = calculerDuree(request.getHeureDebut(), request.getHeureFin());
 
         SeanceProgrammee.SeanceProgrammeeBuilder builder = SeanceProgrammee.builder()
