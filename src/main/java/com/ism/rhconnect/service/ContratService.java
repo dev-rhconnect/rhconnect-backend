@@ -8,6 +8,7 @@ import com.ism.rhconnect.entity.Utilisateur;
 import com.ism.rhconnect.entity.Vacataire;
 import com.ism.rhconnect.exception.ResourceNotFoundException;
 import com.ism.rhconnect.repository.ContratRepository;
+import com.ism.rhconnect.repository.UtilisateurRepository;
 import com.ism.rhconnect.repository.VacataireRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,7 @@ public class ContratService {
 
     private final ContratRepository contratRepository;
     private final VacataireRepository vacataireRepository;
+    private final UtilisateurRepository utilisateurRepository;
     private final PdfContratService pdfContratService;
     private final EmailService emailService;
     private final NotificationService notificationService;
@@ -145,6 +147,31 @@ public class ContratService {
             c.setCheminPdf(fichier.toString());
             contratRepository.save(c);
         }
+    }
+
+    /* ── Sprint 2 : Contrats expirants (dans les 30 prochains jours) ── */
+
+    @Transactional(readOnly = true)
+    public List<ContratResponse> listerExpirants() {
+        LocalDate aujourd_hui = LocalDate.now();
+        LocalDate dans30jours = aujourd_hui.plusDays(30);
+        return contratRepository.findContratsExpirantEntre(aujourd_hui, dans30jours)
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    /* ── Sprint 2 : Vacataire consulte son propre contrat ── */
+
+    @Transactional(readOnly = true)
+    public List<ContratResponse> monContrat() {
+        String email = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+        Utilisateur u = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable"));
+        return contratRepository.findByVacataireId(
+                vacataireRepository.findByUtilisateurId(u.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Dossier vacataire introuvable"))
+                        .getId())
+                .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     /* ── Mapping ── */
