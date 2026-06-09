@@ -80,4 +80,30 @@ public class ContratController {
     public ResponseEntity<ContratResponse> resilier(@PathVariable Long id) {
         return ResponseEntity.ok(contratService.resilier(id));
     }
+
+    /** Sprint 2 — Contrats expirant dans les 30 prochains jours. */
+    @GetMapping("/expirants")
+    @PreAuthorize("hasAnyRole('RESPONSABLE_PROGRAMME', 'ADMIN')")
+    public ResponseEntity<List<ContratResponse>> expirants() {
+        return ResponseEntity.ok(contratService.listerExpirants());
+    }
+
+    /** Sprint 2 — Vacataire consulte ses propres contrats. */
+    @GetMapping("/mon-contrat")
+    @PreAuthorize("hasRole('VACATAIRE')")
+    public ResponseEntity<List<ContratResponse>> monContrat() {
+        return ResponseEntity.ok(contratService.monContrat());
+    }
+
+    /** Sprint 2 — Vacataire télécharge le PDF de son contrat. */
+    @GetMapping("/{id}/pdf")
+    @PreAuthorize("hasAnyRole('RESPONSABLE_PROGRAMME', 'ADMIN', 'VACATAIRE')")
+    public ResponseEntity<byte[]> telechargerPdf(@PathVariable Long id) throws Exception {
+        byte[] pdf = contratService.genererPdf(id);
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/pdf")
+                .header("Content-Disposition",
+                        "attachment; filename=\"Contrat_RHC-" + String.format("%05d", id) + ".pdf\"")
+                .body(pdf);
+    }
 }

@@ -21,4 +21,6 @@ public class VacataireResponse {
     private String rib;
     private Vacataire.StatutVacataire statut;
     private boolean signatureUploaded;
+    private boolean aContratActif;
+    private boolean profilComplet;  // signatureUploaded && aContratActif
 }
