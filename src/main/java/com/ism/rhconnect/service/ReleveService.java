@@ -7,6 +7,7 @@ import com.ism.rhconnect.dto.response.LigneHeureResponse;
 import com.ism.rhconnect.entity.*;
 import com.ism.rhconnect.exception.ResourceNotFoundException;
 import com.ism.rhconnect.exception.UnauthorizedException;
+import com.ism.rhconnect.entity.Paiement;
 import com.ism.rhconnect.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +27,7 @@ public class ReleveService {
     private final ContratRepository contratRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final NotificationService notificationService;
+    private final PaiementRepository paiementRepository;
 
     /* ── Création relevé (en-tête) ── */
 
@@ -192,6 +194,33 @@ public class ReleveService {
                 "Votre relevé de " + feuille.getPeriode() + " (" + feuille.getContrat().getModule()
                         + ") a été validé. Total : " + String.format("%.1f h", total));
 
+        // Calcul automatique de la rémunération si taux horaire défini
+        Double tauxHoraire = feuille.getContrat().getTauxHoraire();
+        if (tauxHoraire != null && tauxHoraire > 0 && total > 0) {
+            double montantBrut    = total * tauxHoraire;
+            double retenueFiscale = montantBrut * 0.05;
+            double montantNet     = montantBrut - retenueFiscale;
+
+            Paiement paiement = Paiement.builder()
+                    .feuilleHeure(saved)
+                    .totalHeures(total)
+                    .tauxHoraire(tauxHoraire)
+                    .montantBrut(montantBrut)
+                    .retenueFiscale(retenueFiscale)
+                    .montantNet(montantNet)
+                    .build();
+            paiementRepository.save(paiement);
+
+            // Notifier le vacataire que sa fiche de paie est disponible
+            Utilisateur vacataire = feuille.getContrat().getVacataire().getUtilisateur();
+            notificationService.creer(
+                    vacataire,
+                    Notification.Type.FICHE_PAIE_DISPONIBLE,
+                    "Votre fiche de paie pour " + feuille.getPeriode()
+                            + " (" + feuille.getContrat().getModule() + ") est disponible."
+                            + " Net à payer : " + String.format("%.0f FCFA", montantNet));
+        }
+
         return toResponse(saved);
     }
 
@@ -232,6 +261,32 @@ public class ReleveService {
         }
 
         return toResponse(saved);
+    }
+
+    /* ── Sprint 3 : RP répond à la demande d'explication du Relais Finance ── */
+
+    @Transactional
+    public FeuilleHeureResponse repondreExplication(Long id, String reponse) {
+        FeuilleHeure feuille = feuilleHeureRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Relevé introuvable : " + id));
+
+        if (feuille.getStatut() != FeuilleHeure.Statut.REJETE) {
+            throw new IllegalStateException("Ce relevé n'est pas en statut rejeté");
+        }
+
+        // Notifier tous les Relais Finance
+        List<Utilisateur> finances = utilisateurRepository.findByRole(Role.RELAIS_FINANCE);
+        Utilisateur rp = getUtilisateurConnecte();
+        String msgReponse = rp.getPrenom() + " " + rp.getNom()
+                + " a répondu à votre demande d'explication concernant le relevé de "
+                + feuille.getAttache().getPrenom() + " " + feuille.getAttache().getNom()
+                + " (" + feuille.getPeriode() + " — " + feuille.getContrat().getModule() + ") : "
+                + reponse;
+        for (Utilisateur finance : finances) {
+            notificationService.creer(finance, Notification.Type.REPONSE_EXPLICATION, msgReponse);
+        }
+
+        return toResponse(feuille);
     }
 
     /* ── Mapping ── */

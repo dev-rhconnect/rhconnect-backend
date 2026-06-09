@@ -50,6 +50,18 @@ public class PaieController {
         return ResponseEntity.ok(paieService.mesFiches());
     }
 
+    /** Sprint 3 — Export BC365 : données de rémunération par module au format CSV. */
+    @GetMapping("/export-bc365")
+    @PreAuthorize("hasRole('RELAIS_FINANCE')")
+    public ResponseEntity<byte[]> exporterBC365() {
+        byte[] csv = paieService.exporterBC365();
+        return ResponseEntity.ok()
+                .header("Content-Type", "text/csv; charset=UTF-8")
+                .header("Content-Disposition", "attachment; filename=\"export_bc365_"
+                        + java.time.LocalDate.now() + ".csv\"")
+                .body(csv);
+    }
+
     /** Sprint 2 — Ndeye Fatou : Télécharger la fiche de paie PDF et l'envoyer par email. */
     @GetMapping("/{id}/telecharger")
     @PreAuthorize("hasAnyRole('RELAIS_FINANCE', 'ADMIN', 'VACATAIRE')")

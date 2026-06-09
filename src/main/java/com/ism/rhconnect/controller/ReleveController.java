@@ -94,4 +94,13 @@ public class ReleveController {
             @RequestParam(required = false) String motif) {
         return ResponseEntity.ok(releveService.rejeter(id, motif));
     }
+
+    /** Sprint 3 — RP répond à une demande d'explication → notifie le Relais Finance. */
+    @PatchMapping("/{id}/reponse-explication")
+    @PreAuthorize("hasRole('RESPONSABLE_PROGRAMME')")
+    public ResponseEntity<FeuilleHeureResponse> repondreExplication(
+            @PathVariable Long id,
+            @RequestParam String reponse) {
+        return ResponseEntity.ok(releveService.repondreExplication(id, reponse));
+    }
 }
