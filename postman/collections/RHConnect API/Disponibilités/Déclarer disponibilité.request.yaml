@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{base_url}}/disponibilites"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "date": "2026-06-16",
+      "heureDebut": "08:00",
+      "heureFin": "12:00",
+      "commentaire": "Disponible le matin"
+    }
+order: 1000

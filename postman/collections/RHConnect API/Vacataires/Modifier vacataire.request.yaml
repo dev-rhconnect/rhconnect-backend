@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{base_url}}/vacataires/1"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "nom": "NDIAYE",
+      "prenom": "Awa",
+      "email": "awa.ndiaye@ism.edu.sn",
+      "specialite": "Informatique",
+      "telephone": "+221 77 000 00 00",
+      "adresse": "Dakar",
+      "nomBanque": "BHS",
+      "rib": "SN123456789"
+    }
+order: 1020

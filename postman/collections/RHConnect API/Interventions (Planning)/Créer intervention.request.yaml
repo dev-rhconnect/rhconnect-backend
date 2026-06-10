@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/interventions"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "contratId": 1,
+      "dateSeance": "2026-02-10",
+      "heureDebut": "08:00",
+      "heureFin": "10:00",
+      "duree": 2
+    }
+order: 2000

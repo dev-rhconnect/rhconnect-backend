@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/seances/1/annuler?motif=Absence%20vacataire"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+order: 1050

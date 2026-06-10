@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/auth/change-password"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "ancienMotDePasse": "Rhconnect@ISM2026",
+      "nouveauMotDePasse": "NouveauMdp@2026"
+    }
+order: 2000

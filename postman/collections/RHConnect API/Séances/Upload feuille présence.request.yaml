@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{base_url}}/seances/1/feuille-presence"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+body:
+  type: formdata
+  formdata:
+    - key: file
+      type: file
+      src: ""
+order: 1060

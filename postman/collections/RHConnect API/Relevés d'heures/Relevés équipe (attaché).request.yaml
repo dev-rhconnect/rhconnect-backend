@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/releves/equipe"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+order: 1070

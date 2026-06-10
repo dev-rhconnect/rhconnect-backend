@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/vacataires"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "prenom": "Fatou",
+      "nom": "DIALLO",
+      "email": "fatou.diallo@gmail.com",
+      "telephone": "77 000 00 00",
+      "specialite": "Informatique",
+      "tauxHoraire": 10000
+    }
+order: 2000

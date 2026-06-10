@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/releves/soumis"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+order: 1080

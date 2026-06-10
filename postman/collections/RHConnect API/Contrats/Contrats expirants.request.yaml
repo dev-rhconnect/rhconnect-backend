@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/contrats/expirants"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+order: 1040

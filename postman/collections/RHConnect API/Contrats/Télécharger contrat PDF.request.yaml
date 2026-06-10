@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/contrats/1/pdf"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+order: 3000
