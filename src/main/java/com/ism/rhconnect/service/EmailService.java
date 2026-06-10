@@ -2,6 +2,7 @@ package com.ism.rhconnect.service;
 
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -9,6 +10,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService {
@@ -98,8 +100,9 @@ public class EmailService {
             h.setSubject(sujet);
             h.setText(html, true);
             mailSender.send(msg);
+            log.info("Email envoyé à {} — {}", destinataire, sujet);
         } catch (Exception e) {
-            throw new RuntimeException("Erreur envoi e-mail [" + sujet + "] : " + e.getMessage(), e);
+            log.error("Échec envoi e-mail à {} [{}] : {}", destinataire, sujet, e.getMessage());
         }
     }
 
@@ -114,8 +117,9 @@ public class EmailService {
             h.setText(html, true);
             h.addAttachment(nomFichier, new ByteArrayResource(bytes), "application/pdf");
             mailSender.send(msg);
+            log.info("Email avec PJ envoyé à {} — {}", destinataire, sujet);
         } catch (Exception e) {
-            throw new RuntimeException("Erreur envoi e-mail [" + sujet + "] : " + e.getMessage(), e);
+            log.error("Échec envoi e-mail avec PJ à {} [{}] : {}", destinataire, sujet, e.getMessage());
         }
     }
 
