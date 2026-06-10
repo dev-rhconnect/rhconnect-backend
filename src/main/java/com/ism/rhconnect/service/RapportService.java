@@ -21,8 +21,13 @@ import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import lombok.RequiredArgsConstructor;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -225,7 +230,7 @@ public class RapportService {
             Row header = sheet.createRow(0);
             String[] cols = {"Vacataire", "Module", "Classe", "Période", "Heures", "Taux FCFA/h", "Brut FCFA", "Retenue 5%", "Net FCFA", "Statut"};
             for (int i = 0; i < cols.length; i++) {
-                Cell c = header.createCell(i);
+                org.apache.poi.ss.usermodel.Cell c = header.createCell(i);
                 c.setCellValue(cols[i]);
                 c.setCellStyle(headerStyle);
             }
@@ -254,16 +259,16 @@ public class RapportService {
 
             // Ligne totaux
             Row total = sheet.createRow(rowNum);
-            Cell labelCell = total.createCell(0);
+            org.apache.poi.ss.usermodel.Cell labelCell = total.createCell(0);
             labelCell.setCellValue("TOTAL");
             labelCell.setCellStyle(totalStyle);
-            Cell brutCell = total.createCell(6);
+            org.apache.poi.ss.usermodel.Cell brutCell = total.createCell(6);
             brutCell.setCellValue(totalBrut);
             brutCell.setCellStyle(totalStyle);
-            Cell retCell = total.createCell(7);
+            org.apache.poi.ss.usermodel.Cell retCell = total.createCell(7);
             retCell.setCellValue(totalRetenue);
             retCell.setCellStyle(totalStyle);
-            Cell netCell = total.createCell(8);
+            org.apache.poi.ss.usermodel.Cell netCell = total.createCell(8);
             netCell.setCellValue(totalNet);
             netCell.setCellStyle(totalStyle);
 
