@@ -23,6 +23,7 @@ public class AdminService {
     private final UtilisateurRepository utilisateurRepository;
     private final AuditLogRepository auditLogRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Transactional(readOnly = true)
     public List<UtilisateurResponse> listerTous() {
@@ -59,6 +60,8 @@ public class AdminService {
 
         Utilisateur saved = utilisateurRepository.save(u);
         journaliser("CREATE_USER", "Utilisateur", saved.getId());
+        emailService.envoyerBienvenue(saved.getEmail(), saved.getPrenom(), saved.getNom(),
+                saved.getRole().name(), mdp);
         return toResponse(saved);
     }
 
@@ -86,6 +89,7 @@ public class AdminService {
         u.setPremierConnexion(true);
         utilisateurRepository.save(u);
         journaliser("RESET_PASSWORD", "Utilisateur", id);
+        emailService.envoyerResetMotDePasse(u.getEmail(), u.getPrenom(), u.getNom(), mdp);
     }
 
     @Transactional

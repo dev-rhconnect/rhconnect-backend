@@ -28,6 +28,7 @@ public class ReleveService {
     private final UtilisateurRepository utilisateurRepository;
     private final NotificationService notificationService;
     private final PaiementRepository paiementRepository;
+    private final EmailService emailService;
 
     /* ── Création relevé (en-tête) ── */
 
@@ -160,6 +161,13 @@ public class ReleveService {
                 "Votre relevé de " + feuille.getPeriode() + " (" + feuille.getContrat().getModule()
                         + ") a été soumis. En attente de validation par le Relais Finance.");
 
+        Utilisateur attache = feuille.getAttache();
+        emailService.envoyerReleveSoumis(
+                attache.getEmail(),
+                attache.getPrenom(),
+                feuille.getContrat().getModule(),
+                feuille.getPeriode());
+
         return toResponse(saved);
     }
 
@@ -193,6 +201,14 @@ public class ReleveService {
                 Notification.Type.RELEVE_VALIDE,
                 "Votre relevé de " + feuille.getPeriode() + " (" + feuille.getContrat().getModule()
                         + ") a été validé. Total : " + String.format("%.1f h", total));
+
+        Utilisateur attacheValide = feuille.getAttache();
+        emailService.envoyerReleveValide(
+                attacheValide.getEmail(),
+                attacheValide.getPrenom(),
+                feuille.getContrat().getModule(),
+                feuille.getPeriode(),
+                String.format("%.1f heure%s", total, total > 1 ? "s" : ""));
 
         // Calcul automatique de la rémunération si taux horaire défini
         Double tauxHoraire = feuille.getContrat().getTauxHoraire();
@@ -247,6 +263,14 @@ public class ReleveService {
                 Notification.Type.RELEVE_REJETE,
                 "Votre relevé de " + feuille.getPeriode() + " (" + feuille.getContrat().getModule()
                         + ") a été rejeté." + msgMotif);
+
+        Utilisateur attacheRejete = feuille.getAttache();
+        emailService.envoyerReleveRejete(
+                attacheRejete.getEmail(),
+                attacheRejete.getPrenom(),
+                feuille.getContrat().getModule(),
+                feuille.getPeriode(),
+                motif);
 
         // Demande d'explication → tous les RP
         List<Utilisateur> responsables = utilisateurRepository.findByRole(Role.RESPONSABLE_PROGRAMME);
