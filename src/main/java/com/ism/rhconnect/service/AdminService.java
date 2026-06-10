@@ -79,6 +79,16 @@ public class AdminService {
     }
 
     @Transactional
+    public void reinitialiserMotDePasse(Long id, String nouveauMdp) {
+        Utilisateur u = findOrThrow(id);
+        String mdp = (nouveauMdp != null && !nouveauMdp.isBlank()) ? nouveauMdp : "Rhconnect@ISM2026";
+        u.setMotDePasse(passwordEncoder.encode(mdp));
+        u.setPremierConnexion(true);
+        utilisateurRepository.save(u);
+        journaliser("RESET_PASSWORD", "Utilisateur", id);
+    }
+
+    @Transactional
     public UtilisateurResponse changerRole(Long id, com.ism.rhconnect.entity.Role nouveauRole) {
         if (nouveauRole == com.ism.rhconnect.entity.Role.ADMIN) {
             throw new IllegalArgumentException("Il ne peut exister qu'un seul compte Admin IT dans le système.");

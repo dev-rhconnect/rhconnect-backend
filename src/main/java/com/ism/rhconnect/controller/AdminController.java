@@ -51,6 +51,15 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
+    /** Réinitialiser le mot de passe d'un compte. */
+    @PatchMapping("/utilisateurs/{id}/reinitialiser-mdp")
+    public ResponseEntity<Void> reinitialiserMotDePasse(
+            @PathVariable Long id,
+            @RequestParam(required = false) String nouveauMdp) {
+        adminService.reinitialiserMotDePasse(id, nouveauMdp);
+        return ResponseEntity.noContent().build();
+    }
+
     /** Changer le rôle d'un compte. */
     @PatchMapping("/utilisateurs/{id}/role")
     public ResponseEntity<UtilisateurResponse> changerRole(
