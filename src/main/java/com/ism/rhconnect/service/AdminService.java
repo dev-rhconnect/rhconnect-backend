@@ -44,7 +44,7 @@ public class AdminService {
             throw new IllegalArgumentException("Email déjà utilisé : " + req.getEmail());
         }
 
-        String mdp = req.getMotDePasseTemporaire() != null
+        String mdp = (req.getMotDePasseTemporaire() != null && !req.getMotDePasseTemporaire().isBlank())
                 ? req.getMotDePasseTemporaire()
                 : "Rhconnect@ISM2026";
 
