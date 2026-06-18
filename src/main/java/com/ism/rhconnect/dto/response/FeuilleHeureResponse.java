@@ -18,6 +18,7 @@ public class FeuilleHeureResponse {
     private String periode;
     private Double totalHeuresValidees;
     private Double volumeHorairePrevisionnel;
+    private Double tauxHoraire;
     private FeuilleHeure.Statut statut;
     private LocalDateTime dateSoumission;
     private LocalDateTime dateValidation;

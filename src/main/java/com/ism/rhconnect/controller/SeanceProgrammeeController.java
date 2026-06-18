@@ -30,6 +30,15 @@ public class SeanceProgrammeeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(seanceService.creer(request));
     }
 
+    /** Attaché : séances REALISEE d'un contrat pour une période donnée (ex: 2026-06). */
+    @GetMapping("/realisees")
+    @PreAuthorize("hasRole('ATTACHE_CLASSE')")
+    public ResponseEntity<List<SeanceProgrammeeResponse>> realiseesPourPeriode(
+            @RequestParam Long contratId,
+            @RequestParam String periode) {
+        return ResponseEntity.ok(seanceService.realiseesPourPeriode(contratId, periode));
+    }
+
     /** Attaché : séances de la semaine (optionnel: ?reference=2026-06-09). */
     @GetMapping("/semaine")
     @PreAuthorize("hasAnyRole('ATTACHE_CLASSE', 'RESPONSABLE_PROGRAMME', 'ADMIN')")

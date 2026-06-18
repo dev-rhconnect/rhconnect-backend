@@ -8,6 +8,7 @@ import com.ism.rhconnect.entity.*;
 import com.ism.rhconnect.exception.ResourceNotFoundException;
 import com.ism.rhconnect.exception.UnauthorizedException;
 import com.ism.rhconnect.entity.Paiement;
+import com.ism.rhconnect.entity.SeanceProgrammee;
 import com.ism.rhconnect.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,6 +30,7 @@ public class ReleveService {
     private final NotificationService notificationService;
     private final PaiementRepository paiementRepository;
     private final EmailService emailService;
+    private final SeanceProgrammeeRepository seanceProgrammeeRepository;
 
     /* ── Création relevé (en-tête) ── */
 
@@ -71,6 +73,20 @@ public class ReleveService {
         }
 
         double duree = calculerDuree(request);
+
+        // Détection dépassement volume horaire prévisionnel
+        Double volumePrevisionnel = feuille.getContrat().getVolumeHorairePrevisionnel();
+        if (!request.isAbsence() && volumePrevisionnel != null) {
+            double totalActuel = feuille.getLignes().stream()
+                    .filter(l -> l.getStatut() != LigneHeure.Statut.REJETEE)
+                    .mapToDouble(LigneHeure::getDuree)
+                    .sum();
+            if (totalActuel + duree > volumePrevisionnel) {
+                throw new IllegalStateException(
+                        String.format("Dépassement du volume horaire prévisionnel : %.1f h déclarées > %.1f h prévues",
+                                totalActuel + duree, volumePrevisionnel));
+            }
+        }
 
         LigneHeure ligne = LigneHeure.builder()
                 .feuilleHeure(feuille)
@@ -313,6 +329,43 @@ public class ReleveService {
         return toResponse(feuille);
     }
 
+    /* ── Import batch de séances REALISEE ── */
+
+    @Transactional
+    public List<LigneHeureResponse> importerSeances(Long feuilleId, List<Long> seanceIds) {
+        FeuilleHeure feuille = feuilleHeureRepository.findById(feuilleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Relevé introuvable : " + feuilleId));
+
+        if (feuille.getStatut() != FeuilleHeure.Statut.EN_COURS) {
+            throw new IllegalStateException("Impossible d'importer : le relevé est " + feuille.getStatut());
+        }
+
+        return seanceIds.stream().map(seanceId -> {
+            SeanceProgrammee s = seanceProgrammeeRepository.findById(seanceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Séance introuvable : " + seanceId));
+
+            LigneHeure ligne = LigneHeure.builder()
+                    .feuilleHeure(feuille)
+                    .date(s.getDateSeance())
+                    .heureDebut(s.getHeureDebut())
+                    .heureFin(s.getHeureFin())
+                    .duree(s.getDuree())
+                    .statut(LigneHeure.Statut.SAISIE)
+                    .build();
+
+            LigneHeure saved = ligneHeureRepository.save(ligne);
+            return LigneHeureResponse.builder()
+                    .id(saved.getId())
+                    .feuilleHeureId(feuilleId)
+                    .date(saved.getDate())
+                    .heureDebut(saved.getHeureDebut())
+                    .heureFin(saved.getHeureFin())
+                    .duree(saved.getDuree())
+                    .statut(saved.getStatut())
+                    .build();
+        }).collect(java.util.stream.Collectors.toList());
+    }
+
     /* ── Mapping ── */
 
     private FeuilleHeureResponse toResponse(FeuilleHeure f) {
@@ -339,6 +392,7 @@ public class ReleveService {
                 .periode(f.getPeriode())
                 .totalHeuresValidees(f.getTotalHeuresValidees())
                 .volumeHorairePrevisionnel(f.getContrat().getVolumeHorairePrevisionnel())
+                .tauxHoraire(f.getContrat().getTauxHoraire())
                 .statut(f.getStatut())
                 .dateSoumission(f.getDateSoumission())
                 .dateValidation(f.getDateValidation())

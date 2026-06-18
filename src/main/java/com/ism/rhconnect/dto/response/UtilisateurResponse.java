@@ -15,5 +15,6 @@ public class UtilisateurResponse {
     private String email;
     private Role role;
     private boolean actif;
+    private boolean premierConnexion;
     private LocalDateTime dateCreation;
 }

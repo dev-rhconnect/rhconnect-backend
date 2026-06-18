@@ -127,6 +127,7 @@ public class AdminService {
                 .email(u.getEmail())
                 .role(u.getRole())
                 .actif(u.isActif())
+                .premierConnexion(u.isPremierConnexion())
                 .dateCreation(u.getDateCreation())
                 .build();
     }

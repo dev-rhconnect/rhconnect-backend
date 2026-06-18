@@ -10,4 +10,6 @@ public interface SeanceProgrammeeRepository extends JpaRepository<SeanceProgramm
     List<SeanceProgrammee> findByContratVacataireUtilisateurId(Long utilisateurId);
     List<SeanceProgrammee> findByStatut(SeanceProgrammee.StatutSeance statut);
     List<SeanceProgrammee> findByContratId(Long contratId);
+    List<SeanceProgrammee> findByContratIdAndStatutAndDateSeanceBetween(
+            Long contratId, SeanceProgrammee.StatutSeance statut, LocalDate debut, LocalDate fin);
 }

@@ -28,6 +28,15 @@ public class ReleveController {
         return ResponseEntity.status(HttpStatus.CREATED).body(releveService.creerFeuille(request));
     }
 
+    /** Importer en masse des séances REALISEE dans un relevé. */
+    @PostMapping("/{id}/importer-seances")
+    @PreAuthorize("hasRole('ATTACHE_CLASSE')")
+    public ResponseEntity<List<LigneHeureResponse>> importerSeances(
+            @PathVariable Long id,
+            @RequestBody List<Long> seanceIds) {
+        return ResponseEntity.ok(releveService.importerSeances(id, seanceIds));
+    }
+
     /** Ajouter une ligne d'heure (séance) à un relevé existant. */
     @PostMapping("/{id}/lignes")
     @PreAuthorize("hasRole('ATTACHE_CLASSE')")

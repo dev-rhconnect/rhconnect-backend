@@ -144,6 +144,17 @@ public class SeanceProgrammeeService {
         return toResponse(seanceRepository.save(s));
     }
 
+    /** Attaché : séances REALISEE d'un contrat pour un mois donné (format "2026-06"). */
+    @Transactional(readOnly = true)
+    public List<SeanceProgrammeeResponse> realiseesPourPeriode(Long contratId, String periode) {
+        String[] parts = periode.split("-");
+        LocalDate debut = LocalDate.of(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), 1);
+        LocalDate fin = debut.withDayOfMonth(debut.lengthOfMonth());
+        return seanceRepository.findByContratIdAndStatutAndDateSeanceBetween(
+                        contratId, SeanceProgrammee.StatutSeance.REALISEE, debut, fin)
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
     /** RP / Admin : toutes les séances. */
     @Transactional(readOnly = true)
     public List<SeanceProgrammeeResponse> listerTous() {
