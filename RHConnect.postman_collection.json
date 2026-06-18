@@ -4,8 +4,10 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:8080/api" },
-    { "key": "token",    "value": "" }
+    { "key": "base_url",       "value": "http://localhost:8080/api" },
+    { "key": "token",          "value": "" },
+    { "key": "login_email",    "value": "" },
+    { "key": "login_password", "value": "" }
   ],
   "item": [
 
@@ -26,7 +28,7 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{base_url}}/auth/login",
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"mame-coumba.sall@ism.edu.sn\",\n  \"motDePasse\": \"NouveauMdp@2026\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{login_email}}\",\n  \"motDePasse\": \"{{login_password}}\"\n}" }
           }
         },
         {
