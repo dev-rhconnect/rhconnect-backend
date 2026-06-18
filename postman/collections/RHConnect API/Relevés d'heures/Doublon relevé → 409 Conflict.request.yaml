@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/releves"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "contratId": 1,
+      "periode": "2026-06"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Doublon détecté (409 Conflict)', () => pm.response.to.have.status(409));
+    language: text/javascript
+order: 2000

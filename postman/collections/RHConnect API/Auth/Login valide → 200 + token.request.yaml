@@ -8,15 +8,16 @@ body:
   content: |-
     {
       "email": "mame-coumba.sall@ism.edu.sn",
-      "motDePasse": "Admin@ISM2026"
+      "motDePasse": "NouveauMdp@2026"
     }
 scripts:
   - type: afterResponse
     code: |-
-      var json = pm.response.json();
-      if (json.token) {
+      pm.test('Status 200 OK', () => pm.response.to.have.status(200));
+      pm.test('Réponse contient un token JWT', () => {
+        var json = pm.response.json();
+        pm.expect(json).to.have.property('token');
         pm.collectionVariables.set('token', json.token);
-        console.log('Token sauvegardé automatiquement');
-      }
+      });
     language: text/javascript
 order: 1000

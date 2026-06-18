@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{base_url}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "inconnu@ism.edu.sn",
+      "motDePasse": "mauvais_mdp"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));
+      pm.test('Aucun token retourné', () => {
+        pm.expect(pm.response.json()).to.not.have.property('token');
+      });
+    language: text/javascript
+order: 2000

@@ -13,42 +13,35 @@
       "name": "Auth",
       "item": [
         {
-          "name": "Login",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "var json = pm.response.json();",
-                "if (json.token) {",
-                "  pm.collectionVariables.set('token', json.token);",
-                "  console.log('Token sauvegardé automatiquement');",
-                "}"
-              ]
-            }
-          }],
+          "name": "Login valide → 200 + token",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Réponse contient un token JWT', () => {",
+            "  var json = pm.response.json();",
+            "  pm.expect(json).to.have.property('token');",
+            "  pm.collectionVariables.set('token', json.token);",
+            "});"
+          ]}}],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{base_url}}/auth/login",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"mame-coumba.sall@ism.edu.sn\",\n  \"motDePasse\": \"Admin@ISM2026\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"mame-coumba.sall@ism.edu.sn\",\n  \"motDePasse\": \"NouveauMdp@2026\"\n}" }
           }
         },
         {
-          "name": "Changer mot de passe (premier connexion)",
+          "name": "Login invalide → 401 Unauthorized",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));",
+            "pm.test('Aucun token retourné', () => {",
+            "  pm.expect(pm.response.json()).to.not.have.property('token');",
+            "});"
+          ]}}],
           "request": {
-            "method": "PUT",
-            "header": [
-              { "key": "Content-Type",  "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
-            "url": "{{base_url}}/auth/change-password",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ancienMotDePasse\": \"Rhconnect@ISM2026\",\n  \"nouveauMotDePasse\": \"NouveauMdp@2026\"\n}"
-            }
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"inconnu@ism.edu.sn\",\n  \"motDePasse\": \"mauvais_mdp\"\n}" }
           }
         }
       ]
@@ -58,7 +51,11 @@
       "name": "Admin IT",
       "item": [
         {
-          "name": "Lister utilisateurs",
+          "name": "Lister utilisateurs → 200",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Réponse est un tableau', () => { pm.expect(pm.response.json()).to.be.an('array'); });"
+          ]}}],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
@@ -66,53 +63,16 @@
           }
         },
         {
-          "name": "Créer compte",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type",  "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
-            "url": "{{base_url}}/admin/utilisateurs",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"prenom\": \"Prénom\",\n  \"nom\": \"NOM\",\n  \"email\": \"prenom.nom@ism.edu.sn\",\n  \"role\": \"RESPONSABLE_PROGRAMME\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Activer compte",
-          "request": {
-            "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": "{{base_url}}/admin/utilisateurs/1/activer"
-          }
-        },
-        {
-          "name": "Désactiver compte",
-          "request": {
-            "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": "{{base_url}}/admin/utilisateurs/1/desactiver"
-          }
-        },
-        {
-          "name": "Changer rôle",
-          "request": {
-            "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": {
-              "raw": "{{base_url}}/admin/utilisateurs/1/role?role=ATTACHE_CLASSE",
-              "query": [{ "key": "role", "value": "ATTACHE_CLASSE" }]
-            }
-          }
-        },
-        {
-          "name": "Logs d'audit",
+          "name": "Accès sans token → 401 (RBAC)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Accès refusé sans token (401 ou 403)', () => {",
+            "  pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+            "});"
+          ]}}],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": "{{base_url}}/admin/logs"
+            "header": [],
+            "url": "{{base_url}}/admin/utilisateurs"
           }
         }
       ]
@@ -122,34 +82,15 @@
       "name": "Vacataires",
       "item": [
         {
-          "name": "Lister vacataires",
+          "name": "Lister vacataires → 200",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Réponse est un tableau', () => { pm.expect(pm.response.json()).to.be.an('array'); });"
+          ]}}],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": "{{base_url}}/vacataires"
-          }
-        },
-        {
-          "name": "Créer vacataire",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type",  "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
-            "url": "{{base_url}}/vacataires",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"prenom\": \"Fatou\",\n  \"nom\": \"DIALLO\",\n  \"email\": \"fatou.diallo@gmail.com\",\n  \"telephone\": \"77 000 00 00\",\n  \"specialite\": \"Informatique\",\n  \"tauxHoraire\": 10000\n}"
-            }
-          }
-        },
-        {
-          "name": "Détail vacataire",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": "{{base_url}}/vacataires/1"
           }
         }
       ]
@@ -159,63 +100,15 @@
       "name": "Contrats",
       "item": [
         {
-          "name": "Créer contrat",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type",  "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
-            "url": "{{base_url}}/contrats",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"vacataireId\": 1,\n  \"module\": \"Algorithmique\",\n  \"classe\": \"L3IAGEA\",\n  \"volumeHoraire\": 30,\n  \"tauxHoraire\": 10000,\n  \"dateDebut\": \"2026-01-15\",\n  \"dateFin\": \"2026-05-30\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Détail contrat",
+          "name": "Lister contrats → 200",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Réponse est un tableau', () => { pm.expect(pm.response.json()).to.be.an('array'); });"
+          ]}}],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": "{{base_url}}/contrats/1"
-          }
-        },
-        {
-          "name": "Télécharger contrat PDF",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": "{{base_url}}/contrats/1/pdf"
-          }
-        }
-      ]
-    },
-
-    {
-      "name": "Interventions (Planning)",
-      "item": [
-        {
-          "name": "Lister interventions",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": "{{base_url}}/interventions"
-          }
-        },
-        {
-          "name": "Créer intervention",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type",  "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
-            "url": "{{base_url}}/interventions",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"contratId\": 1,\n  \"dateSeance\": \"2026-02-10\",\n  \"heureDebut\": \"08:00\",\n  \"heureFin\": \"10:00\",\n  \"duree\": 2\n}"
-            }
+            "url": "{{base_url}}/contrats"
           }
         }
       ]
@@ -225,7 +118,11 @@
       "name": "Relevés d'heures",
       "item": [
         {
-          "name": "Lister relevés",
+          "name": "Lister relevés → 200",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Réponse est un tableau', () => { pm.expect(pm.response.json()).to.be.an('array'); });"
+          ]}}],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
@@ -233,42 +130,18 @@
           }
         },
         {
-          "name": "Créer relevé",
+          "name": "Doublon relevé → 409 Conflict",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Doublon détecté (409 Conflict)', () => pm.response.to.have.status(409));"
+          ]}}],
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": "{{base_url}}/releves",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"contratId\": 1,\n  \"mois\": \"2026-02\",\n  \"lignes\": [\n    { \"date\": \"2026-02-10\", \"heureDebut\": \"08:00\", \"heureFin\": \"10:00\", \"duree\": 2 },\n    { \"date\": \"2026-02-17\", \"heureDebut\": \"08:00\", \"heureFin\": \"10:00\", \"duree\": 2 }\n  ]\n}"
-            }
-          }
-        },
-        {
-          "name": "Soumettre relevé",
-          "request": {
-            "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": "{{base_url}}/releves/1/soumettre"
-          }
-        },
-        {
-          "name": "Valider relevé",
-          "request": {
-            "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": "{{base_url}}/releves/1/valider"
-          }
-        },
-        {
-          "name": "Rejeter relevé",
-          "request": {
-            "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": "{{base_url}}/releves/1/rejeter"
+            "body": { "mode": "raw", "raw": "{\n  \"contratId\": 1,\n  \"periode\": \"2026-06\"\n}" }
           }
         }
       ]
@@ -278,19 +151,15 @@
       "name": "Paiements",
       "item": [
         {
-          "name": "Lister paiements",
+          "name": "Lister paiements → 200",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Réponse est un tableau', () => { pm.expect(pm.response.json()).to.be.an('array'); });"
+          ]}}],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "url": "{{base_url}}/paiements"
-          }
-        },
-        {
-          "name": "Télécharger fiche de paie PDF",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": "{{base_url}}/paiements/1/telecharger"
           }
         }
       ]
@@ -300,7 +169,11 @@
       "name": "Notifications",
       "item": [
         {
-          "name": "Lister notifications",
+          "name": "Lister notifications → 200",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('Réponse est un tableau', () => { pm.expect(pm.response.json()).to.be.an('array'); });"
+          ]}}],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
@@ -314,7 +187,10 @@
       "name": "Dashboard KPI",
       "item": [
         {
-          "name": "KPI général",
+          "name": "KPI général → 200",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+          ]}}],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
