@@ -35,4 +35,7 @@ public class ContratRequest {
     private Long contratParentId;
 
     private boolean estAvenant;
+
+    /** Ex : "2025-2026" — calculé automatiquement si absent */
+    private String anneeAcademique;
 }

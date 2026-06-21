@@ -47,6 +47,14 @@ public class ContratService {
         Vacataire vacataire = vacataireRepository.findById(req.getVacataireId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vacataire introuvable"));
 
+        // Calculer anneeAcademique si non fournie (ex : dateDebut=2025-09 → "2025-2026")
+        String anneeAcad = req.getAnneeAcademique();
+        if (anneeAcad == null || anneeAcad.isBlank()) {
+            int annee = req.getDateDebut().getYear();
+            anneeAcad = (req.getDateDebut().getMonthValue() >= 8 ? annee : annee - 1)
+                    + "-" + (req.getDateDebut().getMonthValue() >= 8 ? annee + 1 : annee);
+        }
+
         Contrat.ContratBuilder builder = Contrat.builder()
                 .vacataire(vacataire)
                 .module(req.getModule())
@@ -55,6 +63,7 @@ public class ContratService {
                 .tauxHoraire(req.getTauxHoraire())
                 .dateDebut(req.getDateDebut())
                 .dateFin(req.getDateFin())
+                .anneeAcademique(anneeAcad)
                 .statut(Contrat.StatutContrat.ACTIF)
                 .estAvenant(req.isEstAvenant());
 
@@ -200,5 +209,20 @@ public class ContratService {
     private Contrat findOrThrow(Long id) {
         return contratRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Contrat introuvable : " + id));
+    }
+
+    /**
+     * Taux horaire selon le profil vacataire et le niveau d'enseignement.
+     * Grille indicative ISM — à ajuster selon politique RH.
+     */
+    public static double computeTauxHoraire(com.ism.rhconnect.entity.TypeVacataire type,
+                                            com.ism.rhconnect.entity.NiveauEnseignement niveau) {
+        boolean estProfUniv = type == com.ism.rhconnect.entity.TypeVacataire.PROFESSEUR_UNIVERSITAIRE;
+        return switch (niveau) {
+            case MASTER, MASTER_1, MASTER_2 -> estProfUniv ? 25_000 : 20_000;
+            case L3, LICENCE               -> estProfUniv ? 20_000 : 17_000;
+            case L1, L2                    -> estProfUniv ? 18_000 : 15_000;
+            case DUT                       -> estProfUniv ? 16_000 : 13_000;
+        };
     }
 }

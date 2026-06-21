@@ -30,6 +30,8 @@ public class Contrat {
     @Column(nullable = false)
     private Double tauxHoraire;
 
+    private String anneeAcademique;
+
     @Column(nullable = false)
     private LocalDate dateDebut;
 

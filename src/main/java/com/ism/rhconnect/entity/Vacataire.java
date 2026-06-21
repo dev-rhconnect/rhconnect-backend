@@ -1,5 +1,6 @@
 package com.ism.rhconnect.entity;
 
+import com.ism.rhconnect.entity.TypeVacataire;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,6 +36,10 @@ public class Vacataire {
 
     // Signature électronique
     private String cheminSignature;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private TypeVacataire typeVacataire = TypeVacataire.STANDARD;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
