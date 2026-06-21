@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/seances"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "contratId": 1,
+      "dateSeance": "2026-06-15",
+      "heureDebut": "08:00",
+      "heureFin": "10:00",
+      "typeSeance": "CM",
+      "salle": "Amphi A"
+    }
+order: 1000

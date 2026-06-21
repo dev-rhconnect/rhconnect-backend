@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/releves/1/valider"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+order: 4000

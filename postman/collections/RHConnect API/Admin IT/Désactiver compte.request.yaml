@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/admin/utilisateurs/1/desactiver"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+order: 4000

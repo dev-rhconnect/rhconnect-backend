@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/releves"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "contratId": 1,
+      "mois": "2026-02",
+      "lignes": [
+        { "date": "2026-02-10", "heureDebut": "08:00", "heureFin": "10:00", "duree": 2 },
+        { "date": "2026-02-17", "heureDebut": "08:00", "heureFin": "10:00", "duree": 2 }
+      ]
+    }
+order: 2000

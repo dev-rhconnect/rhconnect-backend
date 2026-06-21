@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/releves/1/lignes"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "feuilleHeureId": 1,
+      "date": "2026-06-10",
+      "heureDebut": "08:00",
+      "heureFin": "10:00",
+      "observation": "Cours magistral"
+    }
+order: 1020

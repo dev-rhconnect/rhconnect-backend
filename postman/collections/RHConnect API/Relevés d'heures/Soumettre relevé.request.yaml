@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/releves/1/soumettre"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+order: 3000

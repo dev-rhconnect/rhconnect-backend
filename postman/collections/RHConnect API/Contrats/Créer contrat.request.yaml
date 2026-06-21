@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{base_url}}/contrats"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "vacataireId": 1,
+      "module": "Algorithmique",
+      "classe": "L3IAGEA",
+      "volumeHoraire": 30,
+      "tauxHoraire": 10000,
+      "dateDebut": "2026-01-15",
+      "dateFin": "2026-05-30"
+    }
+order: 1000

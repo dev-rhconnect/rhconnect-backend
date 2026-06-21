@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/seances/1/valider"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+order: 1040

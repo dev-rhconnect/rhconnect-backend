@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/releves/1/rejeter"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+order: 5000

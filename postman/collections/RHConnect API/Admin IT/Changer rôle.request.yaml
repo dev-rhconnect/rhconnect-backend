@@ -1,0 +1,8 @@
+$kind: http-request
+url: ?role=ATTACHE_CLASSE
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+queryParams:
+  role: ATTACHE_CLASSE
+order: 5000

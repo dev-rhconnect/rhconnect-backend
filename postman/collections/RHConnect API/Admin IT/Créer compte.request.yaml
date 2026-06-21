@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{base_url}}/admin/utilisateurs"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+body:
+  type: text
+  content: |-
+    {
+      "prenom": "Prénom",
+      "nom": "NOM",
+      "email": "prenom.nom@ism.edu.sn",
+      "role": "RESPONSABLE_PROGRAMME"
+    }
+order: 2000

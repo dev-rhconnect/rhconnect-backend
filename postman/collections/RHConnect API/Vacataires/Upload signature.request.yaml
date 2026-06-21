@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{base_url}}/vacataires/1/signature"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+body:
+  type: formdata
+  formdata:
+    - key: file
+      type: file
+      src: ""
+order: 1040

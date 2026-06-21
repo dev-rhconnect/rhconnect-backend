@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/rapports/finance/paiements?mois=2026-06&format=excel"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+order: 1020

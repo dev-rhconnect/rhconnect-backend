@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/releves/mes-releves-valides"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+order: 1060

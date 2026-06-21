@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/paie/export-bc365"
+method: GET
+headers:
+  Authorization: Bearer {{token}}
+order: 1020
