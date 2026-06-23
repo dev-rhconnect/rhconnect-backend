@@ -79,7 +79,9 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(
             "http://localhost:3000",
             "http://localhost:3002",
-            "http://192.168.20.136:3002"
+            "http://192.168.20.136:3002",
+            "https://rhconnect-ism.com",
+            "https://www.rhconnect-ism.com"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
