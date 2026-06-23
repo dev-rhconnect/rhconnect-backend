@@ -1,25 +1,22 @@
 pipeline {
     agent any
-
     environment {
         IMAGE_NAME    = "rhconnect-backend"
         COMPOSE_DIR   = "/home/mame/rhconnect"
+        JAVA_HOME     = "/usr/lib/jvm/java-17-openjdk-amd64"
+        PATH          = "/usr/lib/jvm/java-17-openjdk-amd64/bin:/usr/local/bin:${env.PATH}"
     }
-
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-
         stage('Build JAR') {
             steps {
                 sh 'mvn package -DskipTests -q'
             }
         }
-
         stage('Tests') {
             steps {
                 sh 'mvn test -q'
@@ -31,10 +28,8 @@ pipeline {
                 }
             }
         }
-
         stage('Build Docker Image') {
             steps {
-                // Patch l'image existante (pas de pull Docker Hub nécessaire)
                 sh """
                     cat > /tmp/Dockerfile.backend.patch << 'EOF'
 FROM rhconnect-backend:latest
@@ -47,14 +42,12 @@ EOF
                 """
             }
         }
-
         stage('Deploy') {
             steps {
                 sh "cd ${COMPOSE_DIR} && docker compose up -d --no-deps backend"
             }
         }
     }
-
     post {
         success {
             echo "Backend déployé — build #${BUILD_NUMBER}"
