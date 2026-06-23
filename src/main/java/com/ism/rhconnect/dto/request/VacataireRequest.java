@@ -1,8 +1,11 @@
 package com.ism.rhconnect.dto.request;
 
+import com.ism.rhconnect.entity.TypeVacataire;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class VacataireRequest {
@@ -17,9 +20,6 @@ public class VacataireRequest {
     @Email(message = "Format email invalide")
     private String email;
 
-    @NotBlank(message = "La spécialité est obligatoire")
-    private String specialite;
-
     private String telephone;
     private String adresse;
     private String situationMatrimoniale;
@@ -33,4 +33,10 @@ public class VacataireRequest {
     private String codeGuichet;
     private String numeroCompte;
     private String rib;
+
+    // Profil pédagogique
+    private TypeVacataire typeVacataire;
+    private List<String> specialites;
+    private List<String> niveaux;
+    private List<String> modules;
 }

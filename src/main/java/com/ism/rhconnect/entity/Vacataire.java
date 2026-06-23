@@ -17,7 +17,6 @@ public class Vacataire {
     @JoinColumn(name = "utilisateur_id", nullable = false)
     private Utilisateur utilisateur;
 
-    @Column(nullable = false)
     private String specialite;
 
     private String telephone;

@@ -24,4 +24,7 @@ public class RegisterRequest {
 
     /** Mot de passe temporaire défini par l'admin. Si absent, un mot de passe par défaut est généré. */
     private String motDePasseTemporaire;
+
+    /** Pour le rôle ATTACHE_CLASSE uniquement : niveau géré ("L1", "L2", "L3"…). */
+    private String niveauGere;
 }

@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -14,9 +15,7 @@ public class ContratResponse {
     private Long vacataireId;
     private String nomVacataire;
     private String emailVacataire;
-    private String module;
-    private String classe;
-    private Double volumeHorairePrevisionnel;
+    private String anneeAcademique;
     private Double tauxHoraire;
     private LocalDate dateDebut;
     private LocalDate dateFin;
@@ -25,4 +24,5 @@ public class ContratResponse {
     private Long contratParentId;
     private Contrat.StatutContrat statut;
     private LocalDateTime dateCreation;
+    private List<ContratModuleResponse> modules;
 }

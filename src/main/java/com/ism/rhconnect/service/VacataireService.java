@@ -7,6 +7,7 @@ import com.ism.rhconnect.entity.Role;
 import com.ism.rhconnect.entity.Utilisateur;
 import com.ism.rhconnect.entity.Vacataire;
 import com.ism.rhconnect.exception.ResourceNotFoundException;
+import com.ism.rhconnect.service.EmailService;
 import com.ism.rhconnect.repository.ContratRepository;
 import com.ism.rhconnect.repository.UtilisateurRepository;
 import com.ism.rhconnect.repository.VacataireRepository;
@@ -33,6 +34,7 @@ public class VacataireService {
     private final UtilisateurRepository utilisateurRepository;
     private final ContratRepository contratRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -49,10 +51,20 @@ public class VacataireService {
                 .build();
         utilisateurRepository.save(utilisateur);
 
+        // Spécialité : on joint la liste en une seule chaîne si fournie
+        String specialite = null;
+        if (request.getSpecialites() != null && !request.getSpecialites().isEmpty()) {
+            specialite = String.join(", ", request.getSpecialites());
+        }
+
+        // Type vacataire
+        com.ism.rhconnect.entity.TypeVacataire typeVacataire =
+                request.getTypeVacataire() != null ? request.getTypeVacataire()
+                        : com.ism.rhconnect.entity.TypeVacataire.STANDARD;
+
         // Créer le dossier vacataire
         Vacataire vacataire = Vacataire.builder()
                 .utilisateur(utilisateur)
-                .specialite(request.getSpecialite())
                 .telephone(request.getTelephone())
                 .adresse(request.getAdresse())
                 .situationMatrimoniale(request.getSituationMatrimoniale())
@@ -64,9 +76,21 @@ public class VacataireService {
                 .codeGuichet(request.getCodeGuichet())
                 .numeroCompte(request.getNumeroCompte())
                 .rib(request.getRib())
+                .specialite(specialite)
+                .typeVacataire(typeVacataire)
                 .build();
 
-        return toResponse(vacataireRepository.save(vacataire));
+        Vacataire saved = vacataireRepository.save(vacataire);
+
+        // Email bienvenue — non bloquant
+        try {
+            emailService.envoyerBienvenue(utilisateur.getEmail(), utilisateur.getPrenom(),
+                    utilisateur.getNom(), "VACATAIRE", "Vacataire@ISM2026");
+        } catch (Exception e) {
+            // L'email n'est pas critique : le dossier est créé même si l'envoi échoue
+        }
+
+        return toResponse(saved);
     }
 
     public List<VacataireResponse> listerTous() {
@@ -86,7 +110,6 @@ public class VacataireService {
         Vacataire vacataire = vacataireRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vacataire introuvable : " + id));
 
-        vacataire.setSpecialite(request.getSpecialite());
         vacataire.setTelephone(request.getTelephone());
         vacataire.setAdresse(request.getAdresse());
         vacataire.setNumeroCni(request.getNumeroCni());
@@ -164,12 +187,20 @@ public class VacataireService {
         boolean signatureOk = v.getCheminSignature() != null;
         boolean contratActif = contratRepository.existsByVacataireIdAndStatut(
                 v.getId(), Contrat.StatutContrat.ACTIF);
+
+        // Reconstruire la liste des spécialités depuis la chaîne jointe
+        java.util.List<String> specialites = null;
+        if (v.getSpecialite() != null && !v.getSpecialite().isBlank()) {
+            specialites = java.util.Arrays.asList(v.getSpecialite().split(",\\s*"));
+        }
+
         return VacataireResponse.builder()
                 .id(v.getId())
                 .nom(v.getUtilisateur().getNom())
                 .prenom(v.getUtilisateur().getPrenom())
                 .email(v.getUtilisateur().getEmail())
                 .specialite(v.getSpecialite())
+                .specialites(specialites)
                 .telephone(v.getTelephone())
                 .adresse(v.getAdresse())
                 .numeroCni(v.getNumeroCni())
@@ -177,6 +208,7 @@ public class VacataireService {
                 .ipres(v.getIpres())
                 .nomBanque(v.getNomBanque())
                 .rib(v.getRib())
+                .typeVacataire(v.getTypeVacataire())
                 .statut(v.getStatut())
                 .signatureUploaded(signatureOk)
                 .aContratActif(contratActif)

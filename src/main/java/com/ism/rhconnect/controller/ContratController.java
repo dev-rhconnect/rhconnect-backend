@@ -1,14 +1,18 @@
 package com.ism.rhconnect.controller;
 
 import com.ism.rhconnect.dto.request.ContratRequest;
+import com.ism.rhconnect.dto.response.ContratModuleResponse;
 import com.ism.rhconnect.dto.response.ContratResponse;
 import com.ism.rhconnect.service.ContratService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 import java.util.List;
 
@@ -72,6 +76,19 @@ public class ContratController {
     public ResponseEntity<Void> envoyer(@PathVariable Long id) throws Exception {
         contratService.envoyerEmail(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /** Démarrer un module d'un contrat. */
+    @PostMapping("/{contratId}/modules/{moduleId}/demarrer")
+    @PreAuthorize("hasAnyRole('RESPONSABLE_PROGRAMME', 'ADMIN')")
+    public ResponseEntity<ContratModuleResponse> demarrerModule(
+            @PathVariable Long contratId,
+            @PathVariable Long moduleId,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        LocalDate date = body != null && body.containsKey("dateDemarrage")
+                ? LocalDate.parse(body.get("dateDemarrage"))
+                : LocalDate.now();
+        return ResponseEntity.ok(contratService.demarrerModule(contratId, moduleId, date));
     }
 
     /** Résilier un contrat. */

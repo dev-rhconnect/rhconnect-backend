@@ -1,6 +1,7 @@
 package com.ism.rhconnect.service;
 
 import com.ism.rhconnect.entity.Contrat;
+import com.ism.rhconnect.entity.ContratModule;
 import com.ism.rhconnect.entity.Utilisateur;
 import com.ism.rhconnect.entity.Vacataire;
 import com.itextpdf.io.font.PdfEncodings;
@@ -212,14 +213,31 @@ public class PdfContratService {
                         .setBorder(new SolidBorder(OR_ISM, 0.5f))
                         .setPaddingTop(5).setPaddingBottom(5));
             }
-            tbl.addCell(celleFiche(c.getModule(), regular));
-            tbl.addCell(celleFiche(c.getDateDebut().format(FMT) + " au\n" + c.getDateFin().format(FMT), regular));
-            tbl.addCell(celleFiche(c.getVolumeHorairePrevisionnel() != null
-                    ? String.format("%.0f", c.getVolumeHorairePrevisionnel()) : "-", regular));
-            tbl.addCell(celleFiche(c.getTauxHoraire() != null
-                    ? String.format("%.0f", c.getTauxHoraire()) : "-", regular));
-            tbl.addCell(celleFiche(c.getClasse(), regular));
-            tbl.addCell(celleFiche("-", regular));
+            String periode = c.getDateDebut().format(FMT) + " au\n" + c.getDateFin().format(FMT);
+            String tauxStr = c.getTauxHoraire() != null ? String.format("%.0f", c.getTauxHoraire()) : "-";
+            if (c.getModules() != null && !c.getModules().isEmpty()) {
+                for (ContratModule cm : c.getModules()) {
+                    String classes = cm.getClasses() != null ? String.join(", ", cm.getClasses()) : "-";
+                    String vh = cm.getVolumeHorairePrevisionnel() != null
+                            ? String.format("%.0f", cm.getVolumeHorairePrevisionnel()) : "-";
+                    String niveauStr = cm.getNiveau() != null ? cm.getNiveau().name() : "-";
+                    tbl.addCell(celleFiche(cm.getNomModule(), regular));
+                    tbl.addCell(celleFiche(periode, regular));
+                    tbl.addCell(celleFiche(vh, regular));
+                    tbl.addCell(celleFiche(tauxStr, regular));
+                    tbl.addCell(celleFiche(classes, regular));
+                    tbl.addCell(celleFiche(niveauStr, regular));
+                }
+            } else {
+                // Fallback pour anciens contrats sans ContratModule
+                tbl.addCell(celleFiche(c.getModule() != null ? c.getModule() : "-", regular));
+                tbl.addCell(celleFiche(periode, regular));
+                tbl.addCell(celleFiche(c.getVolumeHorairePrevisionnel() != null
+                        ? String.format("%.0f", c.getVolumeHorairePrevisionnel()) : "-", regular));
+                tbl.addCell(celleFiche(tauxStr, regular));
+                tbl.addCell(celleFiche(c.getClasse() != null ? c.getClasse() : "-", regular));
+                tbl.addCell(celleFiche("-", regular));
+            }
             doc.add(tbl);
 
             doc.add(new Paragraph()

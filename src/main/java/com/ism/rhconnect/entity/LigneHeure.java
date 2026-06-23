@@ -32,6 +32,9 @@ public class LigneHeure {
 
     private String observation;
 
+    /** Référence à la séance d'origine — utilisé pour éviter les doublons. */
+    private Long seanceProgrammeeId;
+
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private Statut statut = Statut.SAISIE;

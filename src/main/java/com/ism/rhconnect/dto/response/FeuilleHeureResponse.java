@@ -12,10 +12,14 @@ import java.util.List;
 public class FeuilleHeureResponse {
     private Long id;
     private Long contratId;
+    private Long contratModuleId;
+    private Long vacataireId;
     private String nomVacataire;
     private String module;
     private String classe;
+    private List<String> classes;
     private String periode;
+    private int nombreSeances;
     private Double totalHeuresValidees;
     private Double volumeHorairePrevisionnel;
     private Double tauxHoraire;

@@ -54,6 +54,17 @@ public class EmailService {
     }
 
     @Async
+    public void envoyerContratAvecCredentials(String destinataire, String nomVacataire,
+                                               String anneeAcademique, String modules,
+                                               String mdpTemporaire, byte[] pdfBytes) {
+        envoyerAvecPj(destinataire,
+                "RHConnect — Votre contrat " + anneeAcademique + " et vos identifiants de connexion",
+                htmlContratAvecCredentials(nomVacataire, anneeAcademique, modules, destinataire, mdpTemporaire),
+                "Contrat_" + anneeAcademique.replaceAll("[^a-zA-Z0-9_\\-]", "_") + ".pdf",
+                pdfBytes);
+    }
+
+    @Async
     public void envoyerFichePaie(String destinataire, String nomVacataire,
                                   String periode, byte[] pdfBytes) {
         envoyerAvecPj(destinataire,
@@ -219,6 +230,49 @@ public class EmailService {
               </a>
             </div>
             """.formatted(prenom, nom, email, mdp, frontendUrl));
+    }
+
+    private String htmlContratAvecCredentials(String nom, String anneeAcad,
+                                               String modules, String email, String mdp) {
+        return wrap("""
+            <p style="margin:0 0 8px;font-size:15px;color:#444;">Madame, Monsieur <strong style="color:#1C0800;">%s</strong>,</p>
+            <p style="color:#555;line-height:1.7;">
+              Votre dossier vacataire a été enregistré sur la plateforme <strong>RHConnect</strong>
+              de l'Institut Supérieur de Management. Vous trouverez ci-joint votre
+              <strong>contrat de vacation %s</strong>.
+            </p>
+
+            <div style="background:#FEF5EC;border-left:4px solid #EDA832;padding:14px 20px;margin:20px 0;border-radius:0 6px 6px 0;">
+              <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#C88500;font-weight:600;">Modules assignés</p>
+              <p style="margin:6px 0 0;font-size:14px;font-weight:600;color:#1C0800;">%s</p>
+            </div>
+
+            <p style="color:#555;line-height:1.7;margin-top:20px;">Vos identifiants de connexion à la plateforme :</p>
+
+            <table style="width:100%%;border-collapse:collapse;margin:8px 0 24px;">
+              <tr>
+                <td style="padding:10px 14px;background:#f5f5f5;border:1px solid #e0e0e0;font-size:13px;color:#777;width:160px;">Identifiant</td>
+                <td style="padding:10px 14px;background:#fff;border:1px solid #e0e0e0;font-size:14px;color:#1C0800;font-weight:600;">%s</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 14px;background:#f5f5f5;border:1px solid #e0e0e0;border-top:none;font-size:13px;color:#777;">Mot de passe temporaire</td>
+                <td style="padding:10px 14px;background:#fff;border:1px solid #e0e0e0;border-top:none;font-size:14px;color:#1C0800;font-weight:600;letter-spacing:1px;">%s</td>
+              </tr>
+            </table>
+
+            <div style="background:#FFFBF0;border:1px solid #EDA832;border-radius:6px;padding:14px 18px;margin-bottom:24px;">
+              <p style="margin:0;font-size:13px;color:#7A5100;">
+                <strong>Important :</strong> Vous serez invité(e) à choisir un nouveau mot de passe personnel
+                dès votre première connexion. Veuillez signer et retourner le contrat ci-joint à votre Responsable de Programme.
+              </p>
+            </div>
+
+            <div style="text-align:center;margin:28px 0;">
+              <a href="%s/login" style="display:inline-block;background:#1C0800;color:#EDA832;text-decoration:none;padding:13px 32px;border-radius:6px;font-size:14px;font-weight:600;letter-spacing:0.5px;">
+                Accéder à la plateforme
+              </a>
+            </div>
+            """.formatted(nom, anneeAcad, modules, email, mdp, frontendUrl));
     }
 
     private String htmlContrat(String nom, String module) {

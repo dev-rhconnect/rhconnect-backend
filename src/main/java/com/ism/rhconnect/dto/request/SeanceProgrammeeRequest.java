@@ -12,6 +12,8 @@ public class SeanceProgrammeeRequest {
     @NotNull
     private Long contratId;
 
+    private Long contratModuleId;
+
     private Long disponibiliteId;
 
     @NotNull
@@ -26,4 +28,6 @@ public class SeanceProgrammeeRequest {
     private SeanceProgrammee.TypeSeance typeSeance;
 
     private String salle;
+
+    private String justificationEcart;
 }

@@ -1,9 +1,7 @@
 package com.ism.rhconnect.service;
 
-import com.ism.rhconnect.dto.request.FeuilleHeureRequest;
 import com.ism.rhconnect.entity.*;
 import com.ism.rhconnect.repository.*;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,18 +9,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.Collections;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Détection de doublons de relevé — même contrat + même période")
+@DisplayName("Auto-création et anti-doublon de relevé via creerOuIncrementer")
 class DoublonReleveTest {
 
     @InjectMocks  ReleveService            service;
@@ -35,82 +32,101 @@ class DoublonReleveTest {
     @Mock EmailService                     emailService;
     @Mock SeanceProgrammeeRepository       seanceProgrammeeRepository;
 
-    private Contrat contratActif;
     private Utilisateur attache;
+    private Contrat contrat;
+    private SeanceProgrammee seance;
 
     @BeforeEach
     void setup() {
         attache = Utilisateur.builder().id(1L).email("attache@ism.edu.sn").build();
+
         Utilisateur vacataireUser = Utilisateur.builder()
                 .id(2L).prenom("Mansour").nom("Diallo").email("mansour@ism.edu.sn").build();
         Vacataire vacataire = Vacataire.builder().id(1L).utilisateur(vacataireUser).build();
-        contratActif = Contrat.builder()
+
+        contrat = Contrat.builder()
                 .id(10L).statut(Contrat.StatutContrat.ACTIF)
                 .module("Business English 1").classe("L3-GLRS")
                 .vacataire(vacataire).build();
 
-        // Simuler l'utilisateur connecté dans le SecurityContext
-        var auth = new UsernamePasswordAuthenticationToken(
-                attache.getEmail(), null, Collections.emptyList());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-        when(utilisateurRepository.findByEmail(attache.getEmail()))
-                .thenReturn(Optional.of(attache));
-    }
-
-    @AfterEach
-    void clearContext() {
-        SecurityContextHolder.clearContext();
-    }
-
-    @Test
-    @DisplayName("Doublon détecté → IllegalStateException avec message explicite")
-    void doublon_leve_exception() {
-        when(contratRepository.findById(10L)).thenReturn(Optional.of(contratActif));
-        when(feuilleHeureRepository.findByContratIdAndPeriode(10L, "2026-06"))
-                .thenReturn(Optional.of(mock(FeuilleHeure.class)));
-
-        FeuilleHeureRequest req = new FeuilleHeureRequest();
-        req.setContratId(10L);
-        req.setPeriode("2026-06");
-
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> service.creerFeuille(req));
-
-        assertTrue(ex.getMessage().contains("2026-06"),
-                "Le message doit mentionner la période en doublon");
-        verify(feuilleHeureRepository, never()).save(any());
+        seance = SeanceProgrammee.builder()
+                .id(42L)
+                .contrat(contrat)
+                .contratModule(null)
+                .dateSeance(LocalDate.of(2026, 6, 15))
+                .heureDebut(LocalTime.of(8, 0))
+                .heureFin(LocalTime.of(10, 0))
+                .duree(2.0)
+                .build();
     }
 
     @Test
-    @DisplayName("Pas de doublon → relevé créé avec statut EN_COURS")
-    void sans_doublon_cree_releve() {
-        when(contratRepository.findById(10L)).thenReturn(Optional.of(contratActif));
-        when(feuilleHeureRepository.findByContratIdAndPeriode(10L, "2026-07"))
+    @DisplayName("Première séance du mois → nouveau relevé créé + ligne ajoutée")
+    void premiere_seance_cree_releve() {
+        FeuilleHeure nouvelleFeuille = FeuilleHeure.builder()
+                .id(1L).contrat(contrat).periode("2026-06")
+                .statut(FeuilleHeure.Statut.EN_COURS).build();
+
+        when(feuilleHeureRepository.findByContratIdAndPeriodeAndContratModuleIsNull(10L, "2026-06"))
                 .thenReturn(Optional.empty());
-        when(feuilleHeureRepository.save(any())).thenAnswer(inv -> {
-            FeuilleHeure f = inv.getArgument(0);
-            return f;
-        });
+        when(feuilleHeureRepository.save(any())).thenReturn(nouvelleFeuille);
+        when(ligneHeureRepository.existsByFeuilleHeureIdAndSeanceProgrammeeId(1L, 42L))
+                .thenReturn(false);
 
-        FeuilleHeureRequest req = new FeuilleHeureRequest();
-        req.setContratId(10L);
-        req.setPeriode("2026-07");
+        service.creerOuIncrementer(seance, attache);
 
-        assertDoesNotThrow(() -> service.creerFeuille(req));
-        verify(feuilleHeureRepository).save(any());
+        verify(feuilleHeureRepository, atLeastOnce()).save(any());
+        verify(ligneHeureRepository).save(any(LigneHeure.class));
     }
 
     @Test
-    @DisplayName("Contrat inactif → IllegalStateException")
-    void contrat_inactif_bloque_creation() {
-        Contrat inactif = Contrat.builder().id(11L)
-                .statut(Contrat.StatutContrat.EXPIRE).build();
-        when(contratRepository.findById(11L)).thenReturn(Optional.of(inactif));
+    @DisplayName("Relevé existant EN_COURS → ligne ajoutée, pas de nouveau relevé")
+    void releve_existant_incremente() {
+        FeuilleHeure existante = FeuilleHeure.builder()
+                .id(5L).contrat(contrat).periode("2026-06")
+                .statut(FeuilleHeure.Statut.EN_COURS).build();
 
-        FeuilleHeureRequest req = new FeuilleHeureRequest();
-        req.setContratId(11L);
-        req.setPeriode("2026-06");
+        when(feuilleHeureRepository.findByContratIdAndPeriodeAndContratModuleIsNull(10L, "2026-06"))
+                .thenReturn(Optional.of(existante));
+        when(ligneHeureRepository.existsByFeuilleHeureIdAndSeanceProgrammeeId(5L, 42L))
+                .thenReturn(false);
 
-        assertThrows(IllegalStateException.class, () -> service.creerFeuille(req));
+        service.creerOuIncrementer(seance, attache);
+
+        // Pas de création de nouvelle feuille
+        verify(feuilleHeureRepository, never()).save(argThat(f -> ((FeuilleHeure) f).getId() == null));
+        verify(ligneHeureRepository).save(any(LigneHeure.class));
+    }
+
+    @Test
+    @DisplayName("Doublon détecté → ligne NON ajoutée une seconde fois")
+    void doublon_ligne_ignoree() {
+        FeuilleHeure existante = FeuilleHeure.builder()
+                .id(5L).contrat(contrat).periode("2026-06")
+                .statut(FeuilleHeure.Statut.EN_COURS).build();
+
+        when(feuilleHeureRepository.findByContratIdAndPeriodeAndContratModuleIsNull(10L, "2026-06"))
+                .thenReturn(Optional.of(existante));
+        when(ligneHeureRepository.existsByFeuilleHeureIdAndSeanceProgrammeeId(5L, 42L))
+                .thenReturn(true); // déjà présente
+
+        service.creerOuIncrementer(seance, attache);
+
+        verify(ligneHeureRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Relevé déjà SOUMIS_RP → ligne NON ajoutée")
+    void releve_soumis_non_modifie() {
+        FeuilleHeure soumise = FeuilleHeure.builder()
+                .id(7L).contrat(contrat).periode("2026-06")
+                .statut(FeuilleHeure.Statut.SOUMIS_RP).build();
+
+        when(feuilleHeureRepository.findByContratIdAndPeriodeAndContratModuleIsNull(10L, "2026-06"))
+                .thenReturn(Optional.of(soumise));
+
+        service.creerOuIncrementer(seance, attache);
+
+        verify(ligneHeureRepository, never()).save(any());
     }
 }

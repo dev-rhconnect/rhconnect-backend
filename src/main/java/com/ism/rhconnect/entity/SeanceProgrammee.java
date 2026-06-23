@@ -6,6 +6,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+// contratModule FK added to support multi-module contracts (replaces contrat.module / contrat.classe)
+
 @Entity
 @Table(name = "seances_programmees")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -18,6 +20,10 @@ public class SeanceProgrammee {
     @ManyToOne
     @JoinColumn(name = "contrat_id", nullable = false)
     private Contrat contrat;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "contrat_module_id")
+    private ContratModule contratModule;
 
     @ManyToOne
     @JoinColumn(name = "disponibilite_id")
@@ -46,6 +52,7 @@ public class SeanceProgrammee {
 
     private String feuillePresencePath;
     private String noteInterne;
+    private String justificationEcart;
 
     @ManyToOne
     @JoinColumn(name = "valide_par_id")

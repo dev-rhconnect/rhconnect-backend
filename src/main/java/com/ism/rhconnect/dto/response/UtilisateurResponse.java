@@ -17,4 +17,5 @@ public class UtilisateurResponse {
     private boolean actif;
     private boolean premierConnexion;
     private LocalDateTime dateCreation;
+    private String niveauGere;
 }

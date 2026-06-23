@@ -1,6 +1,9 @@
 -- Suppression du compte admin@ism.sn s'il existe (mauvais domaine, compte test)
 DELETE FROM utilisateurs WHERE email = 'admin@ism.sn';
 
+-- Assigner le niveauGere aux attachés de classe déjà créés (dev/test seed)
+UPDATE utilisateurs SET niveau_gere = 'L1' WHERE email = 'mar-sarr.ndiaye@ism.edu.sn' AND niveau_gere IS NULL;
+
 -- Compte Admin IT — Mame Coumba SALL (unique)
 -- Email : mame-coumba.sall@ism.edu.sn
 -- Mot de passe : Admin@ISM2026

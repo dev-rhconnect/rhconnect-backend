@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "contrats")
@@ -18,16 +20,12 @@ public class Contrat {
     @JoinColumn(name = "vacataire_id", nullable = false)
     private Vacataire vacataire;
 
-    @Column(nullable = false)
     private String module;
 
-    @Column(nullable = false)
     private String classe;
 
-    @Column(nullable = false)
     private Double volumeHorairePrevisionnel;
 
-    @Column(nullable = false)
     private Double tauxHoraire;
 
     private String anneeAcademique;
@@ -52,6 +50,10 @@ public class Contrat {
     private StatutContrat statut = StatutContrat.ACTIF;
 
     private LocalDateTime dateCreation;
+
+    @OneToMany(mappedBy = "contrat", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<ContratModule> modules = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

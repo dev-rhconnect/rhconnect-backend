@@ -55,6 +55,7 @@ public class AdminService {
                 .email(req.getEmail())
                 .motDePasse(passwordEncoder.encode(mdp))
                 .role(req.getRole())
+                .niveauGere(req.getNiveauGere())
                 .actif(true)
                 .build();
 
@@ -129,6 +130,7 @@ public class AdminService {
                 .actif(u.isActif())
                 .premierConnexion(u.isPremierConnexion())
                 .dateCreation(u.getDateCreation())
+                .niveauGere(u.getNiveauGere())
                 .build();
     }
 

@@ -1,15 +1,12 @@
 package com.ism.rhconnect.service;
 
+import com.ism.rhconnect.dto.request.ContratModuleRequest;
 import com.ism.rhconnect.dto.request.ContratRequest;
+import com.ism.rhconnect.dto.response.ContratModuleResponse;
 import com.ism.rhconnect.dto.response.ContratResponse;
-import com.ism.rhconnect.entity.Contrat;
-import com.ism.rhconnect.entity.Notification;
-import com.ism.rhconnect.entity.Utilisateur;
-import com.ism.rhconnect.entity.Vacataire;
+import com.ism.rhconnect.entity.*;
 import com.ism.rhconnect.exception.ResourceNotFoundException;
-import com.ism.rhconnect.repository.ContratRepository;
-import com.ism.rhconnect.repository.UtilisateurRepository;
-import com.ism.rhconnect.repository.VacataireRepository;
+import com.ism.rhconnect.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -29,6 +26,7 @@ public class ContratService {
     private final ContratRepository contratRepository;
     private final VacataireRepository vacataireRepository;
     private final UtilisateurRepository utilisateurRepository;
+    private final MaquetteModuleRepository maquetteModuleRepository;
     private final PdfContratService pdfContratService;
     private final EmailService emailService;
     private final NotificationService notificationService;
@@ -47,7 +45,6 @@ public class ContratService {
         Vacataire vacataire = vacataireRepository.findById(req.getVacataireId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vacataire introuvable"));
 
-        // Calculer anneeAcademique si non fournie (ex : dateDebut=2025-09 → "2025-2026")
         String anneeAcad = req.getAnneeAcademique();
         if (anneeAcad == null || anneeAcad.isBlank()) {
             int annee = req.getDateDebut().getYear();
@@ -57,9 +54,6 @@ public class ContratService {
 
         Contrat.ContratBuilder builder = Contrat.builder()
                 .vacataire(vacataire)
-                .module(req.getModule())
-                .classe(req.getClasse())
-                .volumeHorairePrevisionnel(req.getVolumeHorairePrevisionnel())
                 .tauxHoraire(req.getTauxHoraire())
                 .dateDebut(req.getDateDebut())
                 .dateFin(req.getDateFin())
@@ -73,32 +67,72 @@ public class ContratService {
             builder.contratParent(parent);
         }
 
-        Contrat saved = contratRepository.save(builder.build());
+        Contrat contrat = contratRepository.save(builder.build());
 
-        // Notifier le vacataire
+        // Créer les ContratModule en déduisant le VH depuis la maquette
+        for (ContratModuleRequest modReq : req.getModules()) {
+            double vh = modReq.getClasses().stream().mapToDouble(classe -> {
+                return maquetteModuleRepository
+                        .findByClasseRefNomAndModuleRefNom(classe, modReq.getNomModule())
+                        .map(m -> (double) m.getVolumeHoraire())
+                        .orElse(0.0);
+            }).sum();
+
+            ContratModule cm = ContratModule.builder()
+                    .contrat(contrat)
+                    .nomModule(modReq.getNomModule())
+                    .classes(modReq.getClasses())
+                    .niveau(modReq.getNiveau())
+                    .estTroncCommun(modReq.isEstTroncCommun())
+                    .volumeHorairePrevisionnel(vh > 0 ? vh : 1.0)
+                    .heuresEffectuees(0.0)
+                    .heuresRestantes(vh > 0 ? vh : 1.0)
+                    .build();
+            contrat.getModules().add(cm);
+        }
+
+        contratRepository.save(contrat);
+
         notificationService.creer(
                 vacataire.getUtilisateur(),
                 Notification.Type.NOUVEAU_COMPTE,
-                "Un nouveau contrat a été créé pour le module " + req.getModule()
-                        + " (" + req.getDateDebut() + " → " + req.getDateFin() + ").");
+                "Un nouveau contrat " + anneeAcad + " a été créé avec "
+                        + req.getModules().size() + " module(s).");
 
-        return toResponse(saved);
+        // Générer le PDF et envoyer l'email avec identifiants + contrat
+        try {
+            byte[] pdf = pdfContratService.genererContrat(contrat);
+            Path dir = Paths.get(uploadDir, "contrats");
+            Files.createDirectories(dir);
+            Path fichier = dir.resolve("contrat_" + contrat.getId() + "_" + System.currentTimeMillis() + ".pdf");
+            Files.write(fichier, pdf);
+            contrat.setCheminPdf(fichier.toString());
+            contratRepository.save(contrat);
+
+            Utilisateur u = vacataire.getUtilisateur();
+            String nomComplet = u.getPrenom() + " " + u.getNom();
+            emailService.envoyerContratAvecCredentials(
+                    u.getEmail(), nomComplet, anneeAcad,
+                    req.getModules().stream().map(ContratModuleRequest::getNomModule)
+                            .collect(java.util.stream.Collectors.joining(", ")),
+                    "Vacataire@ISM2026", pdf);
+        } catch (Exception e) {
+            // L'email ne doit pas bloquer la création du contrat
+        }
+
+        return toResponse(contrat);
     }
 
     @Transactional(readOnly = true)
     public List<ContratResponse> listerParVacataire(Long vacataireId) {
         return contratRepository.findByVacataireId(vacataireId)
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+                .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<ContratResponse> listerTous() {
         return contratRepository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+                .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -127,7 +161,6 @@ public class ContratService {
 
         c.setCheminPdf(fichier.toString());
         contratRepository.save(c);
-
         return pdf;
     }
 
@@ -140,14 +173,12 @@ public class ContratService {
 
         Utilisateur u = c.getVacataire().getUtilisateur();
         String nomComplet = u.getPrenom() + " " + u.getNom();
+        String modules = c.getModules().stream()
+                .map(ContratModule::getNomModule).collect(Collectors.joining(", "));
 
-        // Email au vacataire
-        emailService.envoyerContrat(u.getEmail(), nomComplet, c.getModule(), pdf);
+        emailService.envoyerContrat(u.getEmail(), nomComplet, modules, pdf);
+        emailService.envoyerContrat("fatou.faye@ism.edu.sn", nomComplet, modules, pdf);
 
-        // Copie à la DRH (Mme Fatou Faye)
-        emailService.envoyerContrat("fatou.faye@ism.edu.sn", nomComplet, c.getModule(), pdf);
-
-        // Mettre à jour le PDF en base si pas encore fait
         if (c.getCheminPdf() == null) {
             Path dir = Paths.get(uploadDir, "contrats");
             Files.createDirectories(dir);
@@ -158,7 +189,7 @@ public class ContratService {
         }
     }
 
-    /* ── Sprint 2 : Contrats expirants (dans les 30 prochains jours) ── */
+    /* ── Contrats expirants ── */
 
     @Transactional(readOnly = true)
     public List<ContratResponse> listerExpirants() {
@@ -168,7 +199,7 @@ public class ContratService {
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
-    /* ── Sprint 2 : Vacataire consulte son propre contrat ── */
+    /* ── Vacataire consulte ses propres contrats ── */
 
     @Transactional(readOnly = true)
     public List<ContratResponse> monContrat() {
@@ -183,18 +214,33 @@ public class ContratService {
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
+    /* ── Démarrer un module ── */
+
+    @Transactional
+    public ContratModuleResponse demarrerModule(Long contratId, Long moduleId, LocalDate date) {
+        Contrat contrat = findOrThrow(contratId);
+        ContratModule cm = contrat.getModules().stream()
+                .filter(m -> m.getId().equals(moduleId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Module introuvable dans ce contrat"));
+        cm.setStatut(ContratModule.StatutModule.EN_COURS);
+        cm.setDateDemarrage(date);
+        contratRepository.save(contrat);
+        return toModuleResponse(cm);
+    }
+
     /* ── Mapping ── */
 
     private ContratResponse toResponse(Contrat c) {
         Utilisateur u = c.getVacataire().getUtilisateur();
+        List<ContratModuleResponse> modules = c.getModules() == null ? List.of()
+                : c.getModules().stream().map(this::toModuleResponse).collect(Collectors.toList());
         return ContratResponse.builder()
                 .id(c.getId())
                 .vacataireId(c.getVacataire().getId())
                 .nomVacataire(u.getPrenom() + " " + u.getNom())
                 .emailVacataire(u.getEmail())
-                .module(c.getModule())
-                .classe(c.getClasse())
-                .volumeHorairePrevisionnel(c.getVolumeHorairePrevisionnel())
+                .anneeAcademique(c.getAnneeAcademique())
                 .tauxHoraire(c.getTauxHoraire())
                 .dateDebut(c.getDateDebut())
                 .dateFin(c.getDateFin())
@@ -203,6 +249,23 @@ public class ContratService {
                 .contratParentId(c.getContratParent() != null ? c.getContratParent().getId() : null)
                 .statut(c.getStatut())
                 .dateCreation(c.getDateCreation())
+                .modules(modules)
+                .build();
+    }
+
+    private ContratModuleResponse toModuleResponse(ContratModule m) {
+        return ContratModuleResponse.builder()
+                .id(m.getId())
+                .nomModule(m.getNomModule())
+                .classes(m.getClasses())
+                .niveau(m.getNiveau())
+                .estTroncCommun(m.getEstTroncCommun())
+                .tauxHoraire(m.getContrat().getTauxHoraire())
+                .volumeHorairePrevisionnel(m.getVolumeHorairePrevisionnel())
+                .heuresEffectuees(m.getHeuresEffectuees())
+                .heuresRestantes(m.getHeuresRestantes())
+                .dateDemarrage(m.getDateDemarrage())
+                .statut(m.getStatut())
                 .build();
     }
 
@@ -211,13 +274,8 @@ public class ContratService {
                 .orElseThrow(() -> new ResourceNotFoundException("Contrat introuvable : " + id));
     }
 
-    /**
-     * Taux horaire selon le profil vacataire et le niveau d'enseignement.
-     * Grille indicative ISM — à ajuster selon politique RH.
-     */
-    public static double computeTauxHoraire(com.ism.rhconnect.entity.TypeVacataire type,
-                                            com.ism.rhconnect.entity.NiveauEnseignement niveau) {
-        boolean estProfUniv = type == com.ism.rhconnect.entity.TypeVacataire.PROFESSEUR_UNIVERSITAIRE;
+    public static double computeTauxHoraire(TypeVacataire type, NiveauEnseignement niveau) {
+        boolean estProfUniv = type == TypeVacataire.PROFESSEUR_UNIVERSITAIRE;
         return switch (niveau) {
             case MASTER, MASTER_1, MASTER_2 -> estProfUniv ? 25_000 : 20_000;
             case L3, LICENCE               -> estProfUniv ? 20_000 : 17_000;

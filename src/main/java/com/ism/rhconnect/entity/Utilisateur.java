@@ -31,6 +31,9 @@ public class Utilisateur {
     @Column(nullable = false)
     private Role role;
 
+    /** Niveau géré par un ATTACHE_CLASSE (ex: "L1", "L2", "L3"). Null pour les autres rôles. */
+    private String niveauGere;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean actif = true;

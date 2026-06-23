@@ -1,6 +1,7 @@
 package com.ism.rhconnect.controller;
 
 import com.ism.rhconnect.dto.request.SeanceProgrammeeRequest;
+import com.ism.rhconnect.dto.response.ModuleActifParClasseResponse;
 import com.ism.rhconnect.dto.response.SeanceProgrammeeResponse;
 import com.ism.rhconnect.service.SeanceProgrammeeService;
 import jakarta.validation.Valid;
@@ -39,17 +40,18 @@ public class SeanceProgrammeeController {
         return ResponseEntity.ok(seanceService.realiseesPourPeriode(contratId, periode));
     }
 
-    /** Attaché : séances de la semaine (optionnel: ?reference=2026-06-09). */
+    /** Attaché / RP : séances de la semaine (optionnel: ?reference=2026-06-09&classeNom=L1-INFO). */
     @GetMapping("/semaine")
     @PreAuthorize("hasAnyRole('ATTACHE_CLASSE', 'RESPONSABLE_PROGRAMME', 'ADMIN')")
     public ResponseEntity<List<SeanceProgrammeeResponse>> semaine(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate reference) {
-        return ResponseEntity.ok(seanceService.semaine(reference));
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate reference,
+            @RequestParam(required = false) String classeNom) {
+        return ResponseEntity.ok(seanceService.semaine(reference, classeNom));
     }
 
-    /** RP / Admin : toutes les séances. */
+    /** Toutes les séances (RP, Admin, Attaché pour le dashboard). */
     @GetMapping
-    @PreAuthorize("hasAnyRole('RESPONSABLE_PROGRAMME', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('RESPONSABLE_PROGRAMME', 'ADMIN', 'ATTACHE_CLASSE')")
     public ResponseEntity<List<SeanceProgrammeeResponse>> listerTous() {
         return ResponseEntity.ok(seanceService.listerTous());
     }
@@ -77,6 +79,14 @@ public class SeanceProgrammeeController {
             @PathVariable Long id,
             @RequestParam(required = false) String motif) {
         return ResponseEntity.ok(seanceService.annuler(id, motif));
+    }
+
+    /** Planning : modules EN_COURS d'un contrat ACTIF pour une classe donnée. */
+    @GetMapping("/modules-actifs")
+    @PreAuthorize("hasAnyRole('RESPONSABLE_PROGRAMME', 'ADMIN', 'ATTACHE_CLASSE')")
+    public ResponseEntity<List<ModuleActifParClasseResponse>> modulesActifsParClasse(
+            @RequestParam String classeNom) {
+        return ResponseEntity.ok(seanceService.modulesActifsParClasse(classeNom));
     }
 
     /** Attaché : upload la feuille de présence. */

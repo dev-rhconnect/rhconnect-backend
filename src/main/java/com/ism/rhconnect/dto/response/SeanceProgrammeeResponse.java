@@ -6,17 +6,22 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
 @Builder
 public class SeanceProgrammeeResponse {
     private Long id;
     private Long contratId;
+    private Long contratModuleId;
+    private Long vacataireId;
     private String nomVacataire;
     private String emailVacataire;
     private String specialiteVacataire;
     private String module;
     private String classe;
+    private List<String> classes;
+    private String justificationEcart;
     private LocalDate dateSeance;
     private LocalTime heureDebut;
     private LocalTime heureFin;

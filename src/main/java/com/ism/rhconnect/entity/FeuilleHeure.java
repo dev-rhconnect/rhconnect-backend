@@ -14,11 +14,16 @@ public class FeuilleHeure {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contrat_id", nullable = false)
     private Contrat contrat;
 
-    @ManyToOne
+    /** Module concerné par ce relevé (null pour anciens contrats mono-module). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "contrat_module_id")
+    private ContratModule contratModule;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "attache_id", nullable = false)
     private Utilisateur attache;
 
@@ -40,6 +45,12 @@ public class FeuilleHeure {
     private List<LigneHeure> lignes;
 
     public enum Statut {
-        EN_COURS, SOUMIS, VALIDE, REJETE
+        EN_COURS,
+        SOUMIS,          // legacy (= SOUMIS_RP)
+        SOUMIS_RP,       // attaché a soumis au RP
+        VALIDE_RP,       // RP a validé
+        SOUMIS_FINANCE,  // RP a transmis au relais finance
+        VALIDE,          // Finance a validé
+        REJETE
     }
 }

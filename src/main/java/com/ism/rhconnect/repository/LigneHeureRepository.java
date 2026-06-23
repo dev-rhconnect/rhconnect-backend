@@ -13,6 +13,8 @@ public interface LigneHeureRepository extends JpaRepository<LigneHeure, Long> {
     @Query("SELECT COUNT(l) > 0 FROM LigneHeure l WHERE l.feuilleHeure.contrat.id = :contratId AND l.date = :date")
     boolean existsDoublon(@Param("contratId") Long contratId, @Param("date") LocalDate date);
 
+    boolean existsByFeuilleHeureIdAndSeanceProgrammeeId(Long feuilleHeureId, Long seanceProgrammeeId);
+
     @Query("SELECT SUM(l.duree) FROM LigneHeure l WHERE l.feuilleHeure.id = :feuilleHeureId AND l.statut = 'VALIDEE'")
     Double sumDureeValidee(@Param("feuilleHeureId") Long feuilleHeureId);
 }
