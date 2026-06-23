@@ -4,7 +4,7 @@ import com.ism.rhconnect.entity.Contrat;
 import com.ism.rhconnect.entity.ContratModule;
 import com.ism.rhconnect.entity.Utilisateur;
 import com.ism.rhconnect.entity.Vacataire;
-import com.itextpdf.io.font.PdfEncodings;
+import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.font.PdfFont;
@@ -40,7 +40,6 @@ public class PdfContratService {
     private static final DeviceRgb GRIS_CLAIR  = new DeviceRgb(245, 245, 245);
     private static final DeviceRgb GRIS_TEXTE  = new DeviceRgb(110, 110, 110);
 
-    private static final String FONTS = "C:/Windows/Fonts/";
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final float FN = 10f;
     private static final float FP = 8.5f;
@@ -51,9 +50,9 @@ public class PdfContratService {
     public byte[] genererContrat(Contrat c) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        PdfFont regular = PdfFontFactory.createFont(FONTS + "times.ttf",   PdfEncodings.IDENTITY_H, PdfFontFactory.EmbeddingStrategy.FORCE_EMBEDDED);
-        PdfFont bold    = PdfFontFactory.createFont(FONTS + "timesbd.ttf", PdfEncodings.IDENTITY_H, PdfFontFactory.EmbeddingStrategy.FORCE_EMBEDDED);
-        PdfFont italic  = PdfFontFactory.createFont(FONTS + "timesi.ttf",  PdfEncodings.IDENTITY_H, PdfFontFactory.EmbeddingStrategy.FORCE_EMBEDDED);
+        PdfFont regular = PdfFontFactory.createFont(StandardFonts.TIMES_ROMAN);
+        PdfFont bold    = PdfFontFactory.createFont(StandardFonts.TIMES_BOLD);
+        PdfFont italic  = PdfFontFactory.createFont(StandardFonts.TIMES_ITALIC);
 
         try (PdfDocument pdf = new PdfDocument(new PdfWriter(out));
              Document doc    = new Document(pdf, PageSize.A4)) {
