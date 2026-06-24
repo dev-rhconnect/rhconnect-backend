@@ -123,6 +123,48 @@ public class ContratService {
         return toResponse(contrat);
     }
 
+    @Transactional
+    public ContratResponse creerAvenant(Long contratParentId, List<ContratModuleRequest> modules) {
+        Contrat parent = findOrThrow(contratParentId);
+
+        Contrat avenant = Contrat.builder()
+                .vacataire(parent.getVacataire())
+                .tauxHoraire(parent.getTauxHoraire())
+                .dateDebut(parent.getDateDebut())
+                .dateFin(parent.getDateFin())
+                .anneeAcademique(parent.getAnneeAcademique())
+                .statut(Contrat.StatutContrat.ACTIF)
+                .estAvenant(true)
+                .contratParent(parent)
+                .build();
+
+        avenant = contratRepository.save(avenant);
+
+        for (ContratModuleRequest modReq : modules) {
+            double vh = modReq.getClasses().stream().mapToDouble(classe ->
+                maquetteModuleRepository
+                    .findByClasseRefNomAndModuleRefNom(classe, modReq.getNomModule())
+                    .map(m -> (double) m.getVolumeHoraire())
+                    .orElse(0.0)
+            ).sum();
+
+            ContratModule cm = ContratModule.builder()
+                    .contrat(avenant)
+                    .nomModule(modReq.getNomModule())
+                    .classes(modReq.getClasses())
+                    .niveau(modReq.getNiveau())
+                    .estTroncCommun(modReq.isEstTroncCommun())
+                    .volumeHorairePrevisionnel(vh > 0 ? vh : 1.0)
+                    .heuresEffectuees(0.0)
+                    .heuresRestantes(vh > 0 ? vh : 1.0)
+                    .build();
+            avenant.getModules().add(cm);
+        }
+
+        contratRepository.save(avenant);
+        return toResponse(avenant);
+    }
+
     @Transactional(readOnly = true)
     public List<ContratResponse> listerParVacataire(Long vacataireId) {
         return contratRepository.findByVacataireId(vacataireId)

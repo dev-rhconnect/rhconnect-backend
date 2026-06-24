@@ -1,5 +1,6 @@
 package com.ism.rhconnect.controller;
 
+import com.ism.rhconnect.dto.request.ContratModuleRequest;
 import com.ism.rhconnect.dto.request.ContratRequest;
 import com.ism.rhconnect.dto.response.ContratModuleResponse;
 import com.ism.rhconnect.dto.response.ContratResponse;
@@ -89,6 +90,19 @@ public class ContratController {
                 ? LocalDate.parse(body.get("dateDemarrage"))
                 : LocalDate.now();
         return ResponseEntity.ok(contratService.demarrerModule(contratId, moduleId, date));
+    }
+
+    /** Créer un avenant à un contrat existant. */
+    @PostMapping("/{id}/avenant")
+    @PreAuthorize("hasAnyRole('RESPONSABLE_PROGRAMME', 'ADMIN')")
+    public ResponseEntity<ContratResponse> creerAvenant(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, java.util.List<ContratModuleRequest>> body) {
+        java.util.List<ContratModuleRequest> modules = body.get("modules");
+        if (modules == null || modules.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(contratService.creerAvenant(id, modules));
     }
 
     /** Résilier un contrat. */
