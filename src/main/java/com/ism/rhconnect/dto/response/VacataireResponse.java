@@ -5,6 +5,7 @@ import com.ism.rhconnect.entity.Vacataire;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -20,6 +21,10 @@ public class VacataireResponse {
     private List<String> modules;
     private String telephone;
     private String adresse;
+    private String situationMatrimoniale;
+    private LocalDate dateNaissance;
+    private String lieuNaissance;
+    private String nationalite;
     private String numeroCni;
     private String ninea;
     private String ipres;

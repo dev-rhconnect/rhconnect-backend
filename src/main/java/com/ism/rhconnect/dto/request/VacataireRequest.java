@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -23,6 +24,9 @@ public class VacataireRequest {
     private String telephone;
     private String adresse;
     private String situationMatrimoniale;
+    private LocalDate dateNaissance;
+    private String lieuNaissance;
+    private String nationalite;
     private String numeroCni;
     private String ninea;
     private String ipres;

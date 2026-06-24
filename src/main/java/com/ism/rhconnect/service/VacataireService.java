@@ -68,6 +68,9 @@ public class VacataireService {
                 .telephone(request.getTelephone())
                 .adresse(request.getAdresse())
                 .situationMatrimoniale(request.getSituationMatrimoniale())
+                .dateNaissance(request.getDateNaissance())
+                .lieuNaissance(request.getLieuNaissance())
+                .nationalite(request.getNationalite())
                 .numeroCni(request.getNumeroCni())
                 .ninea(request.getNinea())
                 .ipres(request.getIpres())
@@ -112,6 +115,10 @@ public class VacataireService {
 
         vacataire.setTelephone(request.getTelephone());
         vacataire.setAdresse(request.getAdresse());
+        vacataire.setSituationMatrimoniale(request.getSituationMatrimoniale());
+        vacataire.setDateNaissance(request.getDateNaissance());
+        vacataire.setLieuNaissance(request.getLieuNaissance());
+        vacataire.setNationalite(request.getNationalite());
         vacataire.setNumeroCni(request.getNumeroCni());
         vacataire.setNinea(request.getNinea());
         vacataire.setIpres(request.getIpres());
@@ -203,6 +210,10 @@ public class VacataireService {
                 .specialites(specialites)
                 .telephone(v.getTelephone())
                 .adresse(v.getAdresse())
+                .situationMatrimoniale(v.getSituationMatrimoniale())
+                .dateNaissance(v.getDateNaissance())
+                .lieuNaissance(v.getLieuNaissance())
+                .nationalite(v.getNationalite())
                 .numeroCni(v.getNumeroCni())
                 .ninea(v.getNinea())
                 .ipres(v.getIpres())

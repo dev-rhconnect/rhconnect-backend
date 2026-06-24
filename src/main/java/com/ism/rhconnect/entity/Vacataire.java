@@ -2,6 +2,7 @@ package com.ism.rhconnect.entity;
 
 import com.ism.rhconnect.entity.TypeVacataire;
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import lombok.*;
 
 @Entity
@@ -25,6 +26,9 @@ public class Vacataire {
     private String ninea;
     private String ipres;
     private String situationMatrimoniale;
+    private LocalDate dateNaissance;
+    private String lieuNaissance;
+    private String nationalite;
 
     // Coordonnées bancaires
     private String nomBanque;
