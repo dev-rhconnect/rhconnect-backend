@@ -1,7 +1,7 @@
 package com.ism.rhconnect.service;
 
 import com.ism.rhconnect.entity.*;
-import com.itextpdf.io.font.PdfEncodings;
+import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
@@ -30,7 +30,6 @@ import java.util.Locale;
 @Service
 public class PdfReleveService {
 
-    private static final String FONTS = "C:/Windows/Fonts/";
 
     // Couleurs
     private static final DeviceRgb BLEU       = new DeviceRgb(20,  50, 150);
@@ -49,10 +48,10 @@ public class PdfReleveService {
     public byte[] genererFicheDecompte(FeuilleHeure f) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        PdfFont regular = font("arial.ttf");
-        PdfFont bold    = font("arialbd.ttf");
-        PdfFont italic  = font("ariali.ttf");
-        PdfFont boldIt  = font("arialbi.ttf");
+        PdfFont regular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+        PdfFont bold    = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
+        PdfFont italic  = PdfFontFactory.createFont(StandardFonts.HELVETICA_OBLIQUE);
+        PdfFont boldIt  = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLDOBLIQUE);
 
         try (PdfDocument pdf = new PdfDocument(new PdfWriter(out));
              Document doc    = new Document(pdf, PageSize.A4)) {
@@ -325,16 +324,6 @@ public class PdfReleveService {
 
     /* ── Helpers ── */
 
-    private PdfFont font(String name) throws Exception {
-        try {
-            return PdfFontFactory.createFont(FONTS + name, PdfEncodings.IDENTITY_H,
-                    PdfFontFactory.EmbeddingStrategy.FORCE_EMBEDDED);
-        } catch (Exception e) {
-            // Fallback si la police n'est pas disponible
-            return PdfFontFactory.createFont(FONTS + "arial.ttf", PdfEncodings.IDENTITY_H,
-                    PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
-        }
-    }
 
     private Cell cell(int rowspan, int colspan, TextAlignment align, PdfFont font, float size, DeviceRgb color) {
         return new Cell(rowspan, colspan).setBorder(BORDER)
